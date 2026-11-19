@@ -184,27 +184,31 @@ def converged_velocity_figure(fname):
 
 
 if __name__ == "__main__":
+    import time
     os.makedirs(OUT, exist_ok=True)
-    velocity_figure("bulk3d", 0.5, "fig2_velocity_3D.png", "Fig. 2 (corrected): pair velocity, 3D lattices, R = Q/2")
-    velocity_figure("monolayer", 0.5, "fig3_velocity_monolayer.png",
-                    "Fig. 3 (corrected): pair velocity, monolayers in a 3D fluid, R = Q/2")
-    stability_figure("bulk3d", 0.5, ["bcl", "fcl", "hex"], "fig4_stability_3D.png",
-                     "Fig. 4 (corrected): 3D, R = Q/2 (SCL: A_perp = 0 identically)")
-    stability_figure("monolayer", 0.5, ["bcl", "fcl", "hex"], "fig5_stability_monolayer.png",
-                     "Fig. 5 (corrected): monolayers in a 3D fluid, R = Q/2 (SCL: A_perp = 0 identically)")
-    minima_figure(0.5, "fig7_minima.png", "Fig. 7 (corrected): R = Q/2. Filled: theta > 0, open: theta < 0")
-    velocity_figure("bulk3d", 0.25, "figS1_velocity_3D_R025.png", "Fig. S1 (corrected): 3D, R = Q/4")
-    velocity_figure("monolayer", 0.25, "figS2_velocity_monolayer_R025.png", "Fig. S2 (corrected): monolayers, R = Q/4")
-    amplitude_figure(0.5, "figS3_mean_abs_A.png")
-    stability_figure("bulk3d", 0.25, LATS, "figS4_stability_3D_R025.png", "Fig. S4 (corrected): 3D, R = Q/4")
-    stability_figure("monolayer", 0.25, LATS, "figS5_stability_monolayer_R025.png",
-                     "Fig. S5 (corrected): monolayers in a 3D fluid, R = Q/4")
-    minima_figure(0.25, "figS6_minima_R025.png", "Fig. S6 (corrected): R = Q/4. Filled: theta > 0, open: theta < 0")
-    # extra SI: pure 2D hydrodynamics (what the old code computed as "2D")
-    velocity_figure("pure2d", 0.5, "figS7_velocity_pure2d.png", "Extra SI: pair velocity, pure 2D, R = Q/2")
-    stability_figure("pure2d", 0.5, ["bcl", "fcl", "hex"], "figS8_stability_pure2d.png",
-                     "Extra SI: pure 2D (line forces), R = Q/2")
-    stability_figure("pure2d", 0.25, LATS, "figS9_stability_pure2d_R025.png", "Extra SI: pure 2D, R = Q/4")
-    minima_figure(0.5, "figS10_minima_pure2d.png", "Extra SI: pure 2D, R = Q/2", geos=("pure2d",))
-    converged_velocity_figure("figS11_converged_velocity_3D.png")
-    print("figures written to", OUT)
+    jobs = [
+        (velocity_figure, ("bulk3d", 0.5, "fig2_velocity_3D.png", "Fig. 2 (corrected): pair velocity, 3D lattices, R = Q/2")),
+        (velocity_figure, ("monolayer", 0.5, "fig3_velocity_monolayer.png", "Fig. 3 (corrected): pair velocity, monolayers in a 3D fluid, R = Q/2")),
+        (stability_figure, ("bulk3d", 0.5, ["bcl", "fcl", "hex"], "fig4_stability_3D.png", "Fig. 4 (corrected): 3D, R = Q/2 (SCL: A_perp = 0 identically)")),
+        (stability_figure, ("monolayer", 0.5, ["bcl", "fcl", "hex"], "fig5_stability_monolayer.png", "Fig. 5 (corrected): monolayers in a 3D fluid, R = Q/2 (SCL: A_perp = 0 identically)")),
+        (minima_figure, (0.5, "fig7_minima.png", "Fig. 7 (corrected): R = Q/2. Filled: theta > 0, open: theta < 0")),
+        (velocity_figure, ("bulk3d", 0.25, "figS1_velocity_3D_R025.png", "Fig. S1 (corrected): 3D, R = Q/4")),
+        (velocity_figure, ("monolayer", 0.25, "figS2_velocity_monolayer_R025.png", "Fig. S2 (corrected): monolayers, R = Q/4")),
+        (amplitude_figure, (0.5, "figS3_mean_abs_A.png")),
+        (stability_figure, ("bulk3d", 0.25, LATS, "figS4_stability_3D_R025.png", "Fig. S4 (corrected): 3D, R = Q/4")),
+        (stability_figure, ("monolayer", 0.25, LATS, "figS5_stability_monolayer_R025.png", "Fig. S5 (corrected): monolayers in a 3D fluid, R = Q/4")),
+        (minima_figure, (0.25, "figS6_minima_R025.png", "Fig. S6 (corrected): R = Q/4. Filled: theta > 0, open: theta < 0")),
+        (velocity_figure, ("pure2d", 0.5, "figS7_velocity_pure2d.png", "Extra SI: pair velocity, pure 2D, R = Q/2")),
+        (stability_figure, ("pure2d", 0.5, ["bcl", "fcl", "hex"], "figS8_stability_pure2d.png", "Extra SI: pure 2D (line forces), R = Q/2")),
+        (stability_figure, ("pure2d", 0.25, LATS, "figS9_stability_pure2d_R025.png", "Extra SI: pure 2D, R = Q/4")),
+        (minima_figure, (0.5, "figS10_minima_pure2d.png", "Extra SI: pure 2D, R = Q/2"), {"geos": ("pure2d",)}),
+        (converged_velocity_figure, ("figS11_converged_velocity_3D.png",)),
+    ]
+    t0 = time.time()
+    for i, (fn, args, *kw) in enumerate(jobs, 1):
+        name = next(a for a in args if isinstance(a, str) and a.endswith(".png"))
+        print(f"[{i:2d}/{len(jobs)}] {name} ...", end=" ", flush=True)
+        t = time.time()
+        fn(*args, **(kw[0] if kw else {}))
+        print(f"ok ({time.time() - t:.1f} s)", flush=True)
+    print(f"{len(jobs)} figures written to {OUT} in {time.time() - t0:.1f} s", flush=True)

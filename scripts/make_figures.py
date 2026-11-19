@@ -127,5 +127,9 @@ def velocity_vs_qh(lattice="hex"):
 if __name__ == "__main__":
     os.makedirs(OUT, exist_ok=True)
     lattice = sys.argv[1] if len(sys.argv) > 1 else "hex"
-    stability_maps(lattice); rates_vs_theta(lattice); amplitude_vs_qh(lattice); velocity_vs_qh(lattice)
-    print("figures written to", OUT)
+    jobs = [stability_maps, rates_vs_theta, amplitude_vs_qh, velocity_vs_qh]
+    for i, fn in enumerate(jobs, 1):
+        print(f"[{i}/{len(jobs)}] {fn.__name__}({lattice}) ...", end=" ", flush=True)
+        fn(lattice)
+        print("ok", flush=True)
+    print("figures written to", OUT, flush=True)
