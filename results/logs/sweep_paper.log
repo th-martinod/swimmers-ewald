@@ -1,0 +1,25 @@
+wrote results/data_paper/scl_bulk3d_R0.5.csv
+wrote results/data_paper/scl_bulk3d_R0.25.csv
+wrote results/data_paper/scl_monolayer_R0.5.csv
+wrote results/data_paper/scl_monolayer_R0.25.csv
+wrote results/data_paper/scl_pure2d_R0.5.csv
+wrote results/data_paper/scl_pure2d_R0.25.csv
+wrote results/data_paper/bcl_bulk3d_R0.5.csv
+wrote results/data_paper/bcl_bulk3d_R0.25.csv
+wrote results/data_paper/bcl_monolayer_R0.5.csv
+wrote results/data_paper/bcl_monolayer_R0.25.csv
+wrote results/data_paper/bcl_pure2d_R0.5.csv
+wrote results/data_paper/bcl_pure2d_R0.25.csv
+wrote results/data_paper/fcl_bulk3d_R0.5.csv
+wrote results/data_paper/fcl_bulk3d_R0.25.csv
+wrote results/data_paper/fcl_monolayer_R0.5.csv
+wrote results/data_paper/fcl_monolayer_R0.25.csv
+wrote results/data_paper/fcl_pure2d_R0.5.csv
+wrote results/data_paper/fcl_pure2d_R0.25.csv
+wrote results/data_paper/hex_bulk3d_R0.5.csv
+wrote results/data_paper/hex_bulk3d_R0.25.csv
+wrote results/data_paper/hex_monolayer_R0.5.csv
+wrote results/data_paper/hex_monolayer_R0.25.csv
+wrote results/data_paper/hex_pure2d_R0.5.csv
+wrote results/data_paper/hex_pure2d_R0.25.csv
+done in 1405.7 s
