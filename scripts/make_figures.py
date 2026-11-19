@@ -19,7 +19,10 @@ STABLE, UNSTABLE, NEUTRAL, INK, MUTED = "#2a78d6", "#e34948", "#f0efec", "#1f1f1
 plt.rcParams.update({"font.size": 10, "axes.edgecolor": MUTED, "axes.labelcolor": INK, "xtick.color": MUTED,
                      "ytick.color": MUTED, "axes.spines.top": False, "axes.spines.right": False,
                      "savefig.dpi": 200, "savefig.bbox": "tight", "figure.facecolor": "#fcfcfb",
-                     "axes.facecolor": "#fcfcfb"})
+                     "axes.facecolor": "#fcfcfb",
+                     # LaTeX look (Computer Modern) without needing a TeX install
+                     "font.family": "serif", "font.serif": ["cmr10"], "mathtext.fontset": "cm",
+                     "axes.formatter.use_mathtext": True, "axes.unicode_minus": False})
 
 
 def load(lattice, geo, R):
@@ -52,7 +55,7 @@ def stability_maps(lattice="hex"):
                 ax.axvline(t, color=INK, lw=0.8, ls=":")
             ax.set_title(LABEL[g], color=INK, fontsize=10)
             ax.set_xlabel(r"$\theta$ (rad)")
-        axs[0].set_ylabel("Q/h")
+        axs[0].set_ylabel(r"$Q/h$")
         h1 = matplotlib.patches.Patch(color=STABLE, label=r"$A_\perp<0$ (pushes Q towards $a^{(1)}$)")
         h2 = matplotlib.patches.Patch(color=UNSTABLE, label=r"$A_\perp>0$ (pushes Q away)")
         fig.legend(handles=[h1, h2], loc="upper center", ncol=2, frameon=False, bbox_to_anchor=(0.5, 1.08))
@@ -78,9 +81,9 @@ def rates_vs_theta(lattice="hex", R=0.5):
         ax.axhline(0, color=MUTED, lw=0.6)
         for t in (-np.pi / 6, np.pi / 6):
             ax.axvline(t, color=MUTED, lw=0.6, ls=":")
-        ax.set_title(f"Q/h = {qh0:g}  (the three normalized curves coincide)", color=INK, fontsize=10)
+        ax.set_title(f"$Q/h = {qh0:g}$  (the three normalized curves coincide)", color=INK, fontsize=10)
         ax.set_xlabel(r"$\theta$ (rad)")
-    axs[0].set_ylabel(r"$(\hat Q\times V_{conf})\cdot\hat n$ / max")
+    axs[0].set_ylabel(r"$(\hat Q\times V_{\mathrm{conf}})\cdot\hat n$ / max")
     axs[0].legend(frameon=False, fontsize=8, loc="lower left")
     fig.savefig(os.path.join(OUT, f"{lattice}_rates_vs_theta_R{R:g}.png"))
     plt.close(fig)
@@ -98,7 +101,7 @@ def amplitude_vs_qh(lattice="hex"):
                       label=f"{LABEL[g]}, R={R:g}Q  (slope {p:.2f})")
     ax.xaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
     ax.set_xticks([0.025, 0.05, 0.1, 0.25]); ax.set_xticklabels(["0.025", "0.05", "0.1", "0.25"])
-    ax.set_xlabel("Q/h"); ax.set_ylabel(r"max$_\theta$ |rate(V$_{conf}$)|  [$\zeta V^S/(\mu Q)$]")
+    ax.set_xlabel(r"$Q/h$"); ax.set_ylabel(r"max$_\theta$ |rate($V_{\mathrm{conf}}$)|  [$\zeta V^S/(\mu Q)$]")
     ax.legend(frameon=False, fontsize=7)
     fig.savefig(os.path.join(OUT, f"{lattice}_vconf_amplitude.png"))
     plt.close(fig)
@@ -117,7 +120,7 @@ def velocity_vs_qh(lattice="hex"):
     axs[0].set_ylabel(r"$-U_\perp$  [$\zeta V^S/(\mu Q)$]  (motion along $-\hat Q\times\hat n$)")
     axs[1].set_ylabel("lattice correction  (U - U$_{isolated}$)/U$_{isolated}$")
     for ax in axs:
-        ax.set_xlabel("Q/h")
+        ax.set_xlabel(r"$Q/h$")
     fig.legend(*axs[0].get_legend_handles_labels(), loc="lower center", ncol=3, frameon=False,
                fontsize=8, bbox_to_anchor=(0.5, -0.22))
     fig.savefig(os.path.join(OUT, f"{lattice}_velocity_vs_qh.png"))

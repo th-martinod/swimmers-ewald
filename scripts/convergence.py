@@ -29,8 +29,11 @@ MARK = ["o", "s", "^", "D"]
 plt.rcParams.update({"font.size": 10, "axes.spines.top": False, "axes.spines.right": False,
                      "axes.edgecolor": MUTED, "xtick.color": MUTED, "ytick.color": MUTED,
                      "savefig.dpi": 200, "savefig.bbox": "tight", "figure.facecolor": "#fcfcfb",
-                     "axes.facecolor": "#fcfcfb"})
-KEYS = [("U_perp", r"$U_\perp$"), ("U_par", r"$U_\parallel$"), ("rate_conf", r"rate$(V_{conf})$")]
+                     "axes.facecolor": "#fcfcfb",
+                     # LaTeX look (Computer Modern) without needing a TeX install
+                     "font.family": "serif", "font.serif": ["cmr10"], "mathtext.fontset": "cm",
+                     "axes.formatter.use_mathtext": True, "axes.unicode_minus": False})
+KEYS = [("U_perp", r"$U_\perp$"), ("U_par", r"$U_\parallel$"), ("rate_conf", r"rate$(V_{\mathrm{conf}})$")]
 T0 = time.time()
 
 
@@ -80,8 +83,8 @@ def conv_ewald(lattices=("scl", "bcl", "fcl", "hex"), h=5.0, theta=0.2, R=0.25):
             axs[i, c].axhline(1e-12, color=MUTED, lw=0.6, ls=":")
         axs[i, 0].set_ylabel("relative error")
     for c in range(3):
-        axs[-1, c].set_xlabel("n")
-    fig.supxlabel("n: images with |m_i| <= n in real and reciprocal space", color=MUTED, fontsize=9)
+        axs[-1, c].set_xlabel(r"$n$")
+    fig.supxlabel(r"$n$: images with $|m_i| \leq n$ in real and reciprocal space", color=MUTED, fontsize=9)
     axs[0, 0].legend(frameon=False, fontsize=8)
     fig.savefig(os.path.join(OUTF, "conv_ewald.png"))
     plt.close(fig)
@@ -136,12 +139,12 @@ def conv_production(theta=0.2, R=0.5):
                 + ("   <- production n" if n == n_prod else ""))
             rows.append({"h": h, "Q_over_h": 1 / h, "n": int(n), "rate_conf": v, "converged": ref})
         ax.semilogy(ns / h, np.maximum(err, 1e-16), color=SERIES[i], marker=MARK[i], ms=4, lw=1.5,
-                    label=f"Q/h = {1 / h:.3f} (h = {h})")
+                    label=f"$Q/h = {1 / h:.3f}$ ($h = {h}$)")
         e_prod = err[list(ns).index(n_prod)]
         ax.plot(n_prod / h, e_prod, marker="*", ms=14, color=SERIES[i], mec=INK, mew=0.8, ls="none")
-    ax.set_xlabel("n / h")
-    ax.set_ylabel("relative error of rate$(V_{conf})$")
-    ax.set_title(r"HEX 3D with the production setting $\alpha=\xi=1$ (stars: n used in production)",
+    ax.set_xlabel(r"$n / h$")
+    ax.set_ylabel(r"relative error of rate$(V_{\mathrm{conf}})$")
+    ax.set_title(r"HEX 3D with the production setting $\alpha=\xi=1$ (stars: $n$ used in production)",
                  fontsize=9, color=INK)
     ax.legend(frameon=False, fontsize=8)
     fig.savefig(os.path.join(OUTF, "conv_production.png"))
@@ -172,11 +175,11 @@ def conv_direct(theta=0.2, R=0.5, h=5.0):
                 for L, val in zip(Ls, y):
                     rows.append({"geometry": geo, "lattice": lat, "L_over_h": L, "observable": key,
                                  "partial_sum": val, "extrapolated": fin[key]})
-        axs[gi, 0].set_title(f"{geo}: rate$(V_{{conf}})$", color=INK, fontsize=10)
+        axs[gi, 0].set_title(rf"{geo}: rate$(V_{{\mathrm{{conf}}}})$", color=INK, fontsize=10)
         axs[gi, 1].set_title(f"{geo}: $U_\\perp$", color=INK, fontsize=10)
-        axs[gi, 0].set_ylabel("|partial sum - extrapolated| / |extrapolated|")
+        axs[gi, 0].set_ylabel(r"relative error  $|S_L - S_\infty| / |S_\infty|$")
     for c in range(2):
-        axs[1, c].set_xlabel("cutoff radius L / (V_0)^{1/3}")
+        axs[1, c].set_xlabel(r"cutoff radius $L / V_0^{1/3}$")
     axs[0, 0].legend(frameon=False, fontsize=8)
     fig.savefig(os.path.join(OUTF, "conv_direct.png"))
     plt.close(fig)

@@ -24,7 +24,10 @@ PI4 = np.pi / 4 + 1e-9
 plt.rcParams.update({"font.size": 10, "axes.spines.top": False, "axes.spines.right": False,
                      "axes.edgecolor": MUTED, "axes.labelcolor": INK, "xtick.color": MUTED, "ytick.color": MUTED,
                      "savefig.dpi": 200, "savefig.bbox": "tight", "figure.facecolor": "#fcfcfb",
-                     "axes.facecolor": "#fcfcfb"})
+                     "axes.facecolor": "#fcfcfb",
+                     # LaTeX look (Computer Modern) without needing a TeX install
+                     "font.family": "serif", "font.serif": ["cmr10"], "mathtext.fontset": "cm",
+                     "axes.formatter.use_mathtext": True, "axes.unicode_minus": False})
 
 
 def load(lat, geo, R):
@@ -69,13 +72,13 @@ def velocity_figure(geo, R, fname, title):
     axs[0].set_ylabel(r"$\bar U_\perp$  [$\zeta V^S/(\mu Q)$]")
     axs[1].set_ylabel(r"lattice correction  $100(\bar U_\perp-U_{iso})/|U_{iso}|$  (%)")
     axs[2].set_ylabel(r"$U_\perp/\bar U_\perp$")
-    axs[0].set_xlabel("Q/h"); axs[1].set_xlabel("Q/h"); axs[2].set_xlabel(r"$\theta$ (rad)")
+    axs[0].set_xlabel(r"$Q/h$"); axs[1].set_xlabel(r"$Q/h$"); axs[2].set_xlabel(r"$\theta$ (rad)")
     axs[2].set_xlim(-np.pi, np.pi)
     axs[0].legend(frameon=False, fontsize=8)
     for lat in LATS:
         axs[2].plot([], [], color=COLOR[lat], lw=1.5, label=NAME[lat])
     axs[2].legend(frameon=False, fontsize=8, ncol=2)
-    axs[2].set_title("all Q/h superimposed (darker = larger Q/h)", fontsize=8, color=MUTED)
+    axs[2].set_title(r"all $Q/h$ superimposed (darker = larger $Q/h$)", fontsize=8, color=MUTED)
     fig.suptitle(title, color=INK, fontsize=10, y=1.02)
     fig.savefig(os.path.join(OUT, fname))
     plt.close(fig)
@@ -105,11 +108,11 @@ def stability_figure(geo, R, lats, fname, title):
         ax.set_xlabel(r"$\theta$ (rad)")
         if zero.all():
             ax.text(0, qh.mean(), r"$A_\perp \equiv 0$" + "\n(neutral)", ha="center", va="center", color=INK)
-    axs[0].set_ylabel("Q/h")
+    axs[0].set_ylabel(r"$Q/h$")
     h1 = matplotlib.patches.Patch(color=STABLE, label=r"$A_\perp<0$: pushes Q back towards $a^{(1)}$")
     h2 = matplotlib.patches.Patch(color=UNSTABLE, label=r"$A_\perp>0$: pushes Q away from $a^{(1)}$")
     fig.legend(handles=[h1, h2], loc="upper center", ncol=2, frameon=False, bbox_to_anchor=(0.5, 1.1))
-    fig.suptitle(title + ".  Lines: level sets of $A_\\perp$ normalized at each Q/h.", color=MUTED,
+    fig.suptitle(title + ".  Lines: level sets of $A_\\perp$ normalized at each $Q/h$.", color=MUTED,
                  fontsize=8, y=-0.04)
     fig.savefig(os.path.join(OUT, fname))
     plt.close(fig)
@@ -132,7 +135,7 @@ def minima_figure(R, fname, title, geos=("bulk3d", "monolayer")):
                         label=f"{NAME[lat]} {'counterclockwise' if side > 0 else 'clockwise'}")
         ax.set_yscale("symlog", linthresh=1e-8)
         ax.axhline(0, color=MUTED, lw=0.6)
-        ax.set_xlabel("Q/h"); ax.set_ylabel(r"min$_\theta\,A_\perp/h$")
+        ax.set_xlabel(r"$Q/h$"); ax.set_ylabel(r"min$_\theta\,A_\perp/h$")
         ax.set_title(GEO[geo], color=INK, fontsize=10)
     axs[0][0].legend(frameon=False, fontsize=7, ncol=1)
     fig.suptitle(title, color=MUTED, fontsize=8, y=-0.04)
@@ -152,10 +155,10 @@ def amplitude_figure(R, fname, geos=("monolayer", "bulk3d", "pure2d")):
             ax.semilogy(qh, np.maximum(y, 1e-22), color=COLOR[lat], marker=MARK[lat], ms=5, mfc="none", lw=1.3,
                         label=NAME[lat])
         ax.set_title(GEO[geo], color=INK, fontsize=10)
-        ax.set_xlabel("Q/h")
+        ax.set_xlabel(r"$Q/h$")
     axs[0].set_ylabel(r"$\overline{|A_\perp|}/h$  (average over $|\theta|\leq\pi/4$)")
     axs[0].legend(frameon=False, fontsize=8)
-    fig.suptitle(f"R = {R:g}Q. For SCL with R = Q/2 the values are at round-off level "
+    fig.suptitle(f"$R = {R:g}\\,Q$. For SCL with $R = Q/2$ the values are at round-off level "
                  "(exact cancellation, SI Section S3).", color=MUTED, fontsize=8, y=-0.04)
     fig.savefig(os.path.join(OUT, fname))
     plt.close(fig)
@@ -175,10 +178,10 @@ def converged_velocity_figure(fname):
             m = circ & np.isclose(c["Q_over_h"], 0.25)
             o = np.argsort(c["theta"][m])
             axs[1].plot(c["theta"][m][o], c[key][m][o], ls, color=COLOR[lat], lw=1.5, label=lab)
-    axs[0].set_xlabel("Q/h"); axs[0].set_ylabel(r"$\theta$-average  [$\zeta V^S/(\mu Q)$]")
-    axs[1].set_xlabel(r"$\theta$ (rad)"); axs[1].set_ylabel(r"value at Q/h = 0.25")
+    axs[0].set_xlabel(r"$Q/h$"); axs[0].set_ylabel(r"$\theta$-average  [$\zeta V^S/(\mu Q)$]")
+    axs[1].set_xlabel(r"$\theta$ (rad)"); axs[1].set_ylabel(r"value at $Q/h = 0.25$")
     axs[0].legend(frameon=False, fontsize=8, ncol=2)
-    fig.suptitle("Converged translational velocity of the pair, 3D, R = Q/2", color=MUTED, fontsize=8, y=-0.04)
+    fig.suptitle("Converged translational velocity of the pair, 3D, $R = Q/2$", color=MUTED, fontsize=8, y=-0.04)
     fig.savefig(os.path.join(OUT, fname))
     plt.close(fig)
 
@@ -187,21 +190,21 @@ if __name__ == "__main__":
     import time
     os.makedirs(OUT, exist_ok=True)
     jobs = [
-        (velocity_figure, ("bulk3d", 0.5, "fig2_velocity_3D.png", "Fig. 2 (corrected): pair velocity, 3D lattices, R = Q/2")),
-        (velocity_figure, ("monolayer", 0.5, "fig3_velocity_monolayer.png", "Fig. 3 (corrected): pair velocity, monolayers in a 3D fluid, R = Q/2")),
-        (stability_figure, ("bulk3d", 0.5, ["bcl", "fcl", "hex"], "fig4_stability_3D.png", "Fig. 4 (corrected): 3D, R = Q/2 (SCL: A_perp = 0 identically)")),
-        (stability_figure, ("monolayer", 0.5, ["bcl", "fcl", "hex"], "fig5_stability_monolayer.png", "Fig. 5 (corrected): monolayers in a 3D fluid, R = Q/2 (SCL: A_perp = 0 identically)")),
-        (minima_figure, (0.5, "fig7_minima.png", "Fig. 7 (corrected): R = Q/2. Filled: theta > 0, open: theta < 0")),
-        (velocity_figure, ("bulk3d", 0.25, "figS1_velocity_3D_R025.png", "Fig. S1 (corrected): 3D, R = Q/4")),
-        (velocity_figure, ("monolayer", 0.25, "figS2_velocity_monolayer_R025.png", "Fig. S2 (corrected): monolayers, R = Q/4")),
+        (velocity_figure, ("bulk3d", 0.5, "fig2_velocity_3D.png", "Fig. 2 (corrected): pair velocity, 3D lattices, $R = Q/2$")),
+        (velocity_figure, ("monolayer", 0.5, "fig3_velocity_monolayer.png", "Fig. 3 (corrected): pair velocity, monolayers in a 3D fluid, $R = Q/2$")),
+        (stability_figure, ("bulk3d", 0.5, ["bcl", "fcl", "hex"], "fig4_stability_3D.png", "Fig. 4 (corrected): 3D, $R = Q/2$ (SCL: $A_\\perp = 0$ identically)")),
+        (stability_figure, ("monolayer", 0.5, ["bcl", "fcl", "hex"], "fig5_stability_monolayer.png", "Fig. 5 (corrected): monolayers in a 3D fluid, $R = Q/2$ (SCL: $A_\\perp = 0$ identically)")),
+        (minima_figure, (0.5, "fig7_minima.png", "Fig. 7 (corrected): $R = Q/2$. Filled: $\\theta > 0$, open: $\\theta < 0$")),
+        (velocity_figure, ("bulk3d", 0.25, "figS1_velocity_3D_R025.png", "Fig. S1 (corrected): 3D, $R = Q/4$")),
+        (velocity_figure, ("monolayer", 0.25, "figS2_velocity_monolayer_R025.png", "Fig. S2 (corrected): monolayers, $R = Q/4$")),
         (amplitude_figure, (0.5, "figS3_mean_abs_A.png")),
-        (stability_figure, ("bulk3d", 0.25, LATS, "figS4_stability_3D_R025.png", "Fig. S4 (corrected): 3D, R = Q/4")),
-        (stability_figure, ("monolayer", 0.25, LATS, "figS5_stability_monolayer_R025.png", "Fig. S5 (corrected): monolayers in a 3D fluid, R = Q/4")),
-        (minima_figure, (0.25, "figS6_minima_R025.png", "Fig. S6 (corrected): R = Q/4. Filled: theta > 0, open: theta < 0")),
-        (velocity_figure, ("pure2d", 0.5, "figS7_velocity_pure2d.png", "Extra SI: pair velocity, pure 2D, R = Q/2")),
-        (stability_figure, ("pure2d", 0.5, ["bcl", "fcl", "hex"], "figS8_stability_pure2d.png", "Extra SI: pure 2D (line forces), R = Q/2")),
-        (stability_figure, ("pure2d", 0.25, LATS, "figS9_stability_pure2d_R025.png", "Extra SI: pure 2D, R = Q/4")),
-        (minima_figure, (0.5, "figS10_minima_pure2d.png", "Extra SI: pure 2D, R = Q/2"), {"geos": ("pure2d",)}),
+        (stability_figure, ("bulk3d", 0.25, LATS, "figS4_stability_3D_R025.png", "Fig. S4 (corrected): 3D, $R = Q/4$")),
+        (stability_figure, ("monolayer", 0.25, LATS, "figS5_stability_monolayer_R025.png", "Fig. S5 (corrected): monolayers in a 3D fluid, $R = Q/4$")),
+        (minima_figure, (0.25, "figS6_minima_R025.png", "Fig. S6 (corrected): $R = Q/4$. Filled: $\\theta > 0$, open: $\\theta < 0$")),
+        (velocity_figure, ("pure2d", 0.5, "figS7_velocity_pure2d.png", "Extra SI: pair velocity, pure 2D, $R = Q/2$")),
+        (stability_figure, ("pure2d", 0.5, ["bcl", "fcl", "hex"], "figS8_stability_pure2d.png", "Extra SI: pure 2D (line forces), $R = Q/2$")),
+        (stability_figure, ("pure2d", 0.25, LATS, "figS9_stability_pure2d_R025.png", "Extra SI: pure 2D, $R = Q/4$")),
+        (minima_figure, (0.5, "figS10_minima_pure2d.png", "Extra SI: pure 2D, $R = Q/2$"), {"geos": ("pure2d",)}),
         (converged_velocity_figure, ("figS11_converged_velocity_3D.png",)),
     ]
     t0 = time.time()
