@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "swimmers-ewald"
+version = "0.1.0"
+description = "Hydrodynamic lattice sums for clusters of antiparallel spinner pairs (corrected re-implementation)"
+requires-python = ">=3.10"
+dependencies = ["numpy>=1.24", "scipy>=1.10", "matplotlib>=3.7", "tomli>=2; python_version < '3.11'"]
+
+[project.optional-dependencies]
+test = ["pytest>=7"]
+
+[project.scripts]
+spinners-sweep = "spinners.sweep:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
