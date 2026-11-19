@@ -80,7 +80,8 @@ def conv_ewald(lattices=("scl", "bcl", "fcl", "hex"), h=5.0, theta=0.2, R=0.25):
             axs[i, c].axhline(1e-12, color=MUTED, lw=0.6, ls=":")
         axs[i, 0].set_ylabel("relative error")
     for c in range(3):
-        axs[-1, c].set_xlabel("n  (images with |m_i| <= n in real and reciprocal space)")
+        axs[-1, c].set_xlabel("n")
+    fig.supxlabel("n: images with |m_i| <= n in real and reciprocal space", color=MUTED, fontsize=9)
     axs[0, 0].legend(frameon=False, fontsize=8)
     fig.savefig(os.path.join(OUTF, "conv_ewald.png"))
     plt.close(fig)
