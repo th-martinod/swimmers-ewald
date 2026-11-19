@@ -1,0 +1,9 @@
+# Hexagonal lattice, same Q/h values as the paper (Q = 1, h = 4 ... 40)
+[sweep]
+lattice = "hex"
+geometries = ["bulk3d", "monolayer", "pure2d"]
+R = [0.5, 0.25]
+h = [4, 5, 6, 7, 8, 9, 10, 12, 16, 20, 24, 28, 32, 36, 40]
+ntheta = 101
+theta_max = 0.7853981633974483   # pi/4, as in run_sums.rkt
+L_over_h = [40, 60, 90, 120, 160]

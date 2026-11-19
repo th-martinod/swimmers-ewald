@@ -1,0 +1,9 @@
+# Simple cubic / square control case: A_conf must vanish identically for R = Q/2
+[sweep]
+lattice = "scl"
+geometries = ["bulk3d", "monolayer", "pure2d"]
+R = [0.5, 0.25]
+h = [4, 5, 8, 10, 16, 20, 40]
+ntheta = 41
+theta_max = 0.7853981633974483
+L_over_h = [40, 60, 90, 120, 160]
