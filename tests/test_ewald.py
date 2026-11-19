@@ -7,7 +7,7 @@ from spinners.lattices import basis, points
 from spinners.pair import sources, eval_points, frame, observables
 
 
-@pytest.mark.parametrize("lattice", ["hex", "scl"])
+@pytest.mark.parametrize("lattice", ["hex", "scl", "bcl", "fcl"])
 def test_xi_independence(lattice):
     h = 5.0
     A = basis(lattice, h)

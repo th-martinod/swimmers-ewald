@@ -7,7 +7,7 @@ GEOS = ["bulk3d", "monolayer", "pure2d"]
 
 
 @pytest.mark.parametrize("geo", GEOS)
-@pytest.mark.parametrize("lattice", ["hex", "scl"])
+@pytest.mark.parametrize("lattice", ["hex", "scl", "bcl", "fcl"])
 def test_qdot_vanishes_on_any_bravais_lattice(fields, geo, lattice):
     """v(r1) = v(r2) exactly: the field is even about the pair centre (lattice inversion
     symmetry + evenness of the pair's own field), so Qdot has no perpendicular part."""
@@ -70,3 +70,12 @@ def test_own_pair_gives_no_rotation():
         Vc = (v[0] - v[1]) - (v[2] - v[3])
         assert abs(np.dot(np.cross(qh, Vc), [0, 0, 1])) < 1e-14
         assert abs(np.dot(np.cross(qh, v[5] - v[4]), [0, 0, 1])) < 1e-14
+
+
+@pytest.mark.parametrize("lattice", ["bcl", "fcl"])
+def test_tilted_lattices_have_a3_along_z_and_theta_from_projected_a1(lattice):
+    from spinners.lattices import basis
+    A = basis(lattice, 5.0)
+    assert np.allclose(A[2][:2], 0) and A[2][2] > 0
+    assert abs(A[0][1]) < 1e-12 and A[0][0] > 0        # projection of a1 along +x
+    assert abs(np.dot(A[0], A[2])) > 1e-6               # a1 is NOT perpendicular to a3 (article remark)

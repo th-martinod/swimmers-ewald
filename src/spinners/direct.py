@@ -14,10 +14,12 @@ class Direct2DLattice:
     def __init__(self, A, kernel="3d", L_over_h=(40, 60, 90, 120, 160)):
         self.A = np.asarray(A, float)
         self.kernel = KERNELS[kernel]
-        h = np.linalg.norm(self.A[0])
+        h = np.cbrt(abs(np.linalg.det(self.A)))  # lattice length scale
         self.L = np.array(L_over_h, float) * h
-        self.rn = points(self.A, self.L.max(), dims=2)
-        self.rad = np.linalg.norm(self.rn, axis=1)
+        # pure 2D: line forces along z through the {a1, a2} net -> distances measured in the xy plane
+        metric = (lambda r: r * np.array([1.0, 1.0, 0.0])) if kernel == "2d" else None
+        self.rn = points(self.A, self.L.max(), dims=2, metric=metric)
+        self.rad = np.linalg.norm(self.rn if metric is None else metric(self.rn), axis=1)
         self.cuts = np.searchsorted(self.rad, self.L * (1 + 1e-12), side="right")
 
     def velocity_vs_L(self, X, P, F):

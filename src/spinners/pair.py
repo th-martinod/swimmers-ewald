@@ -12,6 +12,7 @@ Conventions (see docs/CONVENTIONS.md):
 """
 import numpy as np
 
+from .direct import extrapolate
 from .kernels import stokeslet3d_dot, stokeslet2d_dot
 
 FLUID_SIGN = -1.0
@@ -45,30 +46,46 @@ def isolated_pair_velocity(theta, Q, R, X, kernel="3d"):
     return sum(kern(X - P[s], F[s]) for s in range(4))
 
 
+def _scalars(v, qh, e, Q):
+    """Observables from velocities v[..., 6, 3] at eval_points (any leading shape)."""
+    Vconf = (v[..., 0, :] - v[..., 1, :]) - (v[..., 2, :] - v[..., 3, :])
+    Qdot = v[..., 5, :] - v[..., 4, :]
+    U = 0.5 * (v[..., 4, :] + v[..., 5, :])
+    rate = lambda W: np.cross(qh, W)[..., 2]
+    return {"rate_conf": rate(Vconf), "omega_qdot": rate(Qdot) / Q, "Vconf_par": Vconf @ qh,
+            "U_perp": U @ e, "U_par": U @ qh}
+
+
 def observables(field, theta, Q=1.0, R=0.5, kernel="3d"):
-    """field(X, P, F) -> (v (E,3), err (E,3)). Returns a dict of scalar observables."""
+    """field(X, P, F) -> (v (E,3), err (E,3)). Returns a dict of scalar observables.
+
+    If the field exposes `vs_L` (direct lattice sums), every observable is extrapolated in the cutoff
+    radius on its own, which gives a realistic error (cancellations happen before extrapolating)."""
     qh, e = frame(theta, Q)
     P, F = sources(theta, Q, R)
     X = eval_points(theta, Q, R)
-    v, err = field(X, P, F)
-    Vconf = (v[0] - v[1]) - (v[2] - v[3])
-    Qdot = v[5] - v[4]
-    U = 0.5 * (v[4] + v[5])
+    if hasattr(field, "vs_L"):
+        series = _scalars(field.vs_L(X, P, F), qh, e, Q)
+        out, errs = {}, {}
+        for k, y in series.items():
+            a, err = extrapolate(field.L, y[:, None])
+            out[k], errs[k] = float(a[0]), float(err[0])
+    else:
+        v, _ = field(X, P, F)
+        out = {k: float(val) for k, val in _scalars(v, qh, e, Q).items()}
+        errs = {k: 0.0 for k in out}
     v0 = isolated_pair_velocity(theta, Q, R, X[4:], kernel)
-    U_iso = 0.5 * (v0[0] + v0[1])
-    rate = lambda W: float(np.dot(np.cross(qh, W), NZ))
     sg = float(np.sign(round(theta, 14)))
-    econf = float(np.linalg.norm(err[0] + err[1] + err[2] + err[3]))
-    eq = float(np.linalg.norm(err[4] + err[5]))
     return {
-        "rate_conf": rate(Vconf),           # (Qhat x V_conf).n   [velocity units, as in the paper]
-        "omega_qdot": rate(Qdot) / Q,       # angular velocity of Q from Qdot = v(r2) - v(r1)
-        "A_conf": sg * rate(Vconf),         # paper's A_perp/h (V_conf criterion), <0 = stabilizing
-        "A_qdot": sg * rate(Qdot),          # same sign convention with Qdot instead of V_conf
-        "Vconf_par": float(np.dot(Vconf, qh)),
-        "U_perp": float(np.dot(U, e)),       # translation of the pair centre along Qhat x n
-        "U_par": float(np.dot(U, qh)),
-        "U_perp_isolated": float(np.dot(U_iso, e)),
-        "err_conf": econf,
-        "err_qdot": eq,
+        "rate_conf": out["rate_conf"],          # (Qhat x V_conf).n   [velocity units, as in the paper]
+        "omega_qdot": out["omega_qdot"],        # angular velocity of Q from Qdot = v(r2) - v(r1)
+        "A_conf": sg * out["rate_conf"],        # paper's A_perp/h (V_conf criterion), <0 = stabilizing
+        "A_qdot": sg * out["omega_qdot"] * Q,   # same sign convention with Qdot instead of V_conf
+        "Vconf_par": out["Vconf_par"],
+        "U_perp": out["U_perp"],                # translation of the pair centre along Qhat x n
+        "U_par": out["U_par"],
+        "U_perp_isolated": float(np.dot(0.5 * (v0[0] + v0[1]), e)),
+        "err_conf": errs["rate_conf"],
+        "err_qdot": errs["omega_qdot"],
+        "err_U": errs["U_perp"],
     }

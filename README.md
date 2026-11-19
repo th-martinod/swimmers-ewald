@@ -12,6 +12,7 @@ Es una reimplementación en Python, corregida y validada, del código Racket (`b
 - El criterio del artículo ($V_{\rm conf}$, ec. 5) bien calculado da θ = 0 **inestable** en la red hexagonal y puntos estables en θ = ±π/6, en las tres geometrías.
 - La velocidad de traslación es casi la del par aislado. La red la corrige en menos de 2.5 %.
 - Los defectos del código original están documentados y reproducidos en [`docs/LEGACY_DEFECTS.md`](docs/LEGACY_DEFECTS.md).
+- **Todas las figuras de datos del artículo y del SI**, corregidas, están en `results/figures/paper/`. La correspondencia está en [`docs/FIGURE_MAP.md`](docs/FIGURE_MAP.md).
 
 ---
 
@@ -59,7 +60,7 @@ print(obs["A_conf"], obs["omega_qdot"], obs["U_perp"])
 ```
 swimmers-ewald/
 ├── src/spinners/            el paquete (≈450 líneas en total)
-│   ├── lattices.py          redes de Bravais (hex, scl), red recíproca, puntos de red por radio
+│   ├── lattices.py          redes de Bravais (scl, bcl, fcl, hex), red recíproca, puntos de red por radio
 │   ├── kernels.py           Stokeslet libre 3D y 2D aplicados a una fuerza
 │   ├── ewald.py             Stokeslet triplemente periódico (Ewald de Hasimoto/Beenakker)
 │   ├── direct.py            sumas directas en redes 2D con extrapolación del radio de corte
@@ -68,17 +69,23 @@ swimmers-ewald/
 │   ├── sweep.py             barridos de parámetros desde un .toml, salida en CSV (comando spinners-sweep)
 │   └── legacy.py            port fiel del Racket de producción, solo para regresión y diagnóstico
 ├── tests/                   pytest: validación numérica, simetrías y regresión contra legacy
-├── configs/                 hex.toml (barrido principal) y scl_control.toml (control)
+├── configs/                 paper.toml (todas las figuras del artículo), hex.toml, scl_control.toml
 ├── scripts/
-│   ├── make_figures.py      figuras a partir de results/data
+│   ├── paper_figures.py     versiones corregidas de las Figs. 2-5, 7, S1-S6 y extras de 2D puro
+│   ├── convergence.py       convergencia de Ewald (n, ξ), truncamiento en producción, sumas directas
+│   ├── make_figures.py      figuras de resumen de la red hexagonal (results/figures)
 │   ├── legacy_vs_corrected.py   diagnóstico cuantitativo del código Racket
 │   └── run_all.sh           reproduce todo: tests, barridos, figuras y diagnóstico
 ├── results/
-│   ├── data/                {red}_{geometría}_R{R}.csv
-│   ├── figures/             mapas de estabilidad, tasas, amplitudes, velocidades
+│   ├── data_paper/          barrido completo: {red}_{geometría}_R{R}.csv para las 4 redes
+│   ├── data/                barrido hexagonal y control SCL (resumen)
+│   ├── convergence/         CSV de los estudios de convergencia
+│   ├── figures/paper/       figuras corregidas del artículo y del SI (ver docs/FIGURE_MAP.md)
+│   ├── figures/             figuras de resumen de la hexagonal
 │   └── logs/                salida de los barridos y del diagnóstico
 ├── docs/
 │   ├── CONVENTIONS.md       signos, ejes, unidades (léelo antes de interpretar un número)
+│   ├── FIGURE_MAP.md        figura del artículo -> archivo corregido y qué cambia
 │   └── LEGACY_DEFECTS.md    los 9 defectos de base_sums.rkt, con cifras
 ├── RESULTS.md               resumen de resultados físicos
 └── .github/workflows/       CI: pytest en Python 3.10 y 3.13
@@ -127,9 +134,12 @@ Si es la primera vez que abres el repositorio, este orden va de lo más simple a
 
 ### 4.1 `lattices.py` — las redes
 
-- `basis(lattice, h)`: vectores base como filas. `hex` es hexagonal simple (capas apiladas a lo largo de $a^{(3)}$ con separación $h$). `scl` es cúbica simple. $a^{(3)}$ es siempre el eje de giro $\hat n=\hat z$.
+- `basis(lattice, h)`: vectores base como filas, siempre con $a^{(3)}$ a lo largo de $\hat n=\hat z$.
+  - `hex`: hexagonal simple (capas apiladas a lo largo de $a^{(3)}$ con separación $h$).
+  - `scl`: cúbica simple de lado $h$.
+  - `bcl`, `fcl`: vectores primitivos de Hasimoto con lado de cubo $h$ ($V_0=h^3/2$ y $h^3/4$). Como $a^{(1)},a^{(2)}$ no son perpendiculares a $a^{(3)}$, `_rotate_a3_to_z` rota la base para que $a^{(3)}\to z$ y la proyección de $a^{(1)}\to +x$. Así θ se mide desde esa proyección, que es la definición del artículo.
 - `reciprocal(A)`: red recíproca con $a_i\cdot b_j=\delta_{ij}$ y volumen de celda $V_0$.
-- `points(A, rmax, dims)`: todos los puntos con $|r|\le r_{\max}$, **ordenados por radio**. Con `dims=2` usa solo $a^{(1)},a^{(2)}$ (una monocapa). El orden por radio es lo que permite las sumas acumuladas de `direct.py`.
+- `points(A, rmax, dims, metric)`: todos los puntos con $|r|\le r_{\max}$, **ordenados por radio**. Con `dims=2` usa solo $a^{(1)},a^{(2)}$ (una monocapa, inclinada para BCL y FCL). `metric` permite medir distancias proyectadas (2D puro). El orden por radio es lo que permite las sumas acumuladas de `direct.py`.
 
 ### 4.2 `kernels.py` — Stokeslets libres
 
@@ -143,6 +153,7 @@ Si es la primera vez que abres el repositorio, este orden va de lo más simple a
 
 $$G_{\rm per}(x)=\frac{1}{4\pi^2 V_0}\sum_{k\neq 0}\varphi(k)\frac{I-\hat k\hat k}{k^2}\cos(2\pi k\cdot x)\;-\;\frac{1}{4\pi}\sum_n A_\xi(x-r_n),\qquad \varphi=(1+\pi\xi k^2)e^{-\pi\xi k^2}.$$
 
+- `nk`, `nr`: opcionales, fijan cubos de índices $|m_i|\le n$ en lugar de los radios de corte. Solo para los estudios de convergencia.
 - `xi` por defecto es $V_0^{2/3}$. Así las partes real y de Fourier quedan balanceadas para cualquier $h$, con pocas imágenes. Esto es lo que fallaba en el Racket (α = 1 fijo con h hasta 40).
 - El coeficiente $-1/(4\pi)$ sale del límite de corta distancia de $A_\xi$. Los tests lo verifican por independencia de ξ.
 - `kappa = -1/(2π√ξ)`: término propio analítico para puntos coincidentes.
@@ -154,6 +165,7 @@ $$G_{\rm per}(x)=\frac{1}{4\pi^2 V_0}\sum_{k\neq 0}\varphi(k)\frac{I-\hat k\hat 
 
 - `velocity_vs_L`: sumas parciales para cada radio de corte $L$, en una sola pasada con `cumsum` sobre puntos ordenados por radio.
 - `velocity`: extrapola $L\to\infty$ ajustando $a+b/L+c/L^2$ con `extrapolate` y devuelve el error estimado.
+- `backends.make_field` expone además `field.vs_L` y `field.L`. Con eso, `pair.observables` extrapola **cada observable** por separado, después de las cancelaciones, lo que da errores realistas (~1e-7 relativo para $V_{\rm conf}$).
 - Funciona porque cada par tiene fuerza neta y primer momento nulos. Las sumas por capas centrosimétricas convergen absolutamente.
 
 ### 4.5 `pair.py` — el par y los observables (el corazón físico)
@@ -172,7 +184,7 @@ Si quieres cambiar **qué se mide**, este es el único archivo que hay que tocar
 
 ### 4.7 `sweep.py` — barridos
 
-- `theta_grid(n, tmax)`: malla simétrica que contiene θ = 0 exacto.
+- `theta_grid(n, tmax)`: malla simétrica que contiene θ = 0 exacto. `theta_union` une varias mallas (por ejemplo, la fina de los mapas y la completa de las velocidades).
 - `run_one(task)`: una red fija, todos los θ.
 - `main()`: CLI `spinners-sweep config.toml [--out DIR] [--workers N]`.
 
@@ -180,7 +192,8 @@ Formato del `.toml`:
 
 ```toml
 [sweep]
-lattice = "hex"                       # "hex" o "scl"
+lattices = ["scl", "bcl", "fcl", "hex"]   # o lattice = "hex"
+theta_ranges = [[0.785398, 101], [3.141593, 81]]   # [theta_max, n]; o ntheta + theta_max
 geometries = ["bulk3d", "monolayer", "pure2d"]
 R = [0.5, 0.25]                       # radio de cada spinner, en unidades de Q
 h = [4, 5, 6, 8, 10, 20, 40]          # parámetro de red (Q = 1, así que Q/h = 1/h)
@@ -209,7 +222,7 @@ L_over_h = [40, 60, 90, 120, 160]     # radios de corte de las sumas directas
 | `Vconf_par` | $V_{\rm conf}\cdot\hat Q$ | informativo |
 | `U_perp`, `U_par` | $U=\tfrac12[v(r_1)+v(r_2)]$ sobre $\hat e_\perp$ y $\hat Q$ | traslación del par |
 | `U_perp_isolated` | lo mismo sin red | `U_perp - U_perp_isolated` es el efecto de la red |
-| `err_conf`, `err_qdot` | error de extrapolación | 0 en `bulk3d` |
+| `err_conf`, `err_qdot`, `err_U` | error de extrapolación de cada observable | 0 en `bulk3d` |
 
 Todas las velocidades están en unidades $\zeta V^S/(\mu Q)$, que son las de $A_\perp/h$ y $B_\perp/h$ del artículo.
 
@@ -231,8 +244,8 @@ pytest -q -k ewald # solo un grupo
 
 | archivo | verifica |
 |---|---|
-| `test_ewald.py` | independencia de ξ a 1e-12 (hex y scl). Ewald = suma directa 3D extrapolada a 2e-4 |
-| `test_symmetry.py` | campo par respecto al centro del par. $\dot Q\equiv 0$ en las tres geometrías y en hex y scl. `rate_conf` $=-2(v_{p_1}-v_{p_2})\cdot\hat e$. Simetrías de la hexagonal (paridad en θ, período π/3 de `rate_conf` y de `U_perp`). Cancelación SCL solo para R = Q/2. El par aislado no se rota a sí mismo |
+| `test_ewald.py` | independencia de ξ a 1e-12 (scl, bcl, fcl, hex). Ewald = suma directa 3D extrapolada a 2e-4 |
+| `test_symmetry.py` | campo par respecto al centro del par. $\dot Q\equiv 0$ en las tres geometrías y en las cuatro redes. Orientación de BCL y FCL ($a^{(3)}\parallel z$, θ desde la proyección de $a^{(1)}$). `rate_conf` $=-2(v_{p_1}-v_{p_2})\cdot\hat e$. Simetrías de la hexagonal (paridad en θ, período π/3 de `rate_conf` y de `U_perp`). Cancelación SCL solo para R = Q/2. El par aislado no se rota a sí mismo |
 | `test_legacy.py` | el Racket invierte el signo del torque HEX (2D y 3D). Legacy consistente = corregido × $h^3/(4\pi^3)$ |
 
 `conftest.py` cachea los campos para que la suite corra en segundos (usa radios de corte más chicos que los de producción).
@@ -255,11 +268,11 @@ La lista completa de defectos está en [`docs/LEGACY_DEFECTS.md`](docs/LEGACY_DE
 ./scripts/run_all.sh
 ```
 
-Corre los tests, los dos barridos, las figuras y el diagnóstico. Toma unos 12 minutos con 2 núcleos (unos 8 el barrido hexagonal y 2.5 el de control SCL). Los logs quedan en `results/logs/`.
+Corre los tests, los barridos, todas las figuras, las convergencias y el diagnóstico. El barrido completo de las cuatro redes (`configs/paper.toml`) es la parte larga: unos 40 minutos con 2 núcleos. Los logs quedan en `results/logs/`.
 
 ## 11. Cómo extender el código
 
-**Agregar una red (por ejemplo BCL o FCL).** Agrega su base a `lattices.basis`. Asegúrate de que $a^{(3)}$ sea el eje de giro y de que **Q gire en el plano perpendicular a $a^{(3)}$**. El Racket fallaba justamente en eso para BCL y FCL. Después corre `tests/test_ewald.py::test_xi_independence` con la nueva red y agrégala a un `.toml`.
+**Agregar una red.** Agrega su base a `lattices.basis` y pásala por `_rotate_a3_to_z` si $a^{(1)}$ no es perpendicular a $a^{(3)}$. Así **Q gira en el plano perpendicular a $a^{(3)}$**, que es justo lo que el Racket hacía mal para BCL y FCL. Después agrégala a `test_xi_independence` y a un `.toml`.
 
 **Agregar una geometría.** Escribe una clase con un método `velocity(X, P, F) -> (v, err)` y regístrala en `backends.make_field`. No hace falta tocar nada más.
 
@@ -269,6 +282,6 @@ Corre los tests, los dos barridos, las figuras y el diagnóstico. Toma unos 12 m
 
 ## 12. Limitaciones conocidas
 
-- Solo `hex` y `scl` están implementadas. BCL y FCL del artículo quedan pendientes (ver sección 11).
-- Las sumas directas (`monolayer`, `pure2d`) dependen de la extrapolación en $L$. El error estimado se guarda en `err_*`. En los barridos actuales es menor que 0.5 % del máximo de cada curva.
+- Las sumas directas (`monolayer`, `pure2d`) dependen de la extrapolación en $L$. El error estimado de cada observable se guarda en `err_*` (~1e-7 relativo para $V_{\rm conf}$, ≤ 3e-4 para $U$).
+- La velocidad del artículo ($B_\perp$, promedio volumétrico con el factor A) no se reproduce porque con la integral exacta es nula. Se reporta $U_\perp$ (ver `docs/FIGURE_MAP.md`).
 - El modelo es el del artículo: fuerzas puntuales, flujo de Stokes, red perfecta. Dentro de ese modelo la red no ejerce torque orientador sobre el par (`RESULTS.md`, sección 1). Cualquier mecanismo de orientación tiene que venir de algo que el modelo no incluye.

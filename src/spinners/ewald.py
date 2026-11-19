@@ -32,16 +32,31 @@ def _matA_dot(xi, D, f):
     return out
 
 
+def _cube(n):
+    m = np.arange(-n, n + 1)
+    g = np.meshgrid(m, m, m, indexing="ij")
+    return np.stack([x.ravel() for x in g], 1).astype(float)
+
+
 class Ewald3D:
     """Periodic Stokeslet sums for a 3D Bravais lattice with basis A (rows)."""
 
-    def __init__(self, A, xi=None, cut=36.0):
+    def __init__(self, A, xi=None, cut=36.0, nk=None, nr=None):
+        """xi: Ewald splitting parameter (length^2), default V0^(2/3).
+        cut: Gaussian cutoff exponent for both sums (pi xi k^2 <= cut, pi r^2/xi <= cut).
+        nk, nr: if given, use index cubes |m_i| <= nk (reciprocal) and |m_i| <= nr (real) instead of the
+        radius cutoffs. Only meant for convergence studies."""
         self.A = np.asarray(A, float)
         self.B, self.V0 = reciprocal(self.A)
         self.xi = float(xi) if xi is not None else self.V0 ** (2.0 / 3.0)
         kmax = np.sqrt(cut / (PI * self.xi))
         self.rmax = np.sqrt(cut * self.xi / PI)
-        k = points(self.B, kmax, dims=3)[1:]  # drop k = 0
+        self.nr = nr
+        if nk is None:
+            k = points(self.B, kmax, dims=3)[1:]  # drop k = 0
+        else:
+            k = _cube(nk) @ self.B
+            k = k[np.any(k != 0, axis=1)]
         k2 = np.sum(k * k, axis=1)
         self.k = k
         self.khat = k / np.sqrt(k2)[:, None]
@@ -60,8 +75,10 @@ class Ewald3D:
         cosk = np.cos(2 * PI * np.einsum("kj,esj->kes", self.k, d))
         vF = np.einsum("k,kes,ksj->ej", self.wk, cosk, g)
         # real part
-        rmax = self.rmax + np.max(np.linalg.norm(d, axis=-1))
-        rn = points(self.A, rmax, dims=3)
+        if self.nr is None:
+            rn = points(self.A, self.rmax + np.max(np.linalg.norm(d, axis=-1)), dims=3)
+        else:
+            rn = _cube(self.nr) @ self.A
         vR = np.zeros_like(vF)
         for s in range(P.shape[0]):
             D = d[:, s, None, :] - rn[None, :, :]  # (E,N,3)
