@@ -1,7 +1,7 @@
 [  0.01 min] conv_xi scl
-[  0.02 min] conv_xi bcl
-[  0.03 min] conv_xi fcl
-[  0.04 min] conv_xi hex
+[  0.03 min] conv_xi bcl
+[  0.04 min] conv_xi fcl
+[  0.05 min] conv_xi hex
 'created' timestamp seems very low; regarding as unix timestamp
 'modified' timestamp seems very low; regarding as unix timestamp
 'created' timestamp seems very low; regarding as unix timestamp
@@ -21,10 +21,10 @@
 'created' timestamp seems very low; regarding as unix timestamp
 'modified' timestamp seems very low; regarding as unix timestamp
   convergence/conv_xi
-[  0.11 min] conv_ewald scl
-[  0.17 min] conv_ewald bcl
-[  0.22 min] conv_ewald fcl
-[  0.27 min] conv_ewald hex
+[  0.18 min] conv_ewald scl
+[  0.26 min] conv_ewald bcl
+[  0.34 min] conv_ewald fcl
+[  0.42 min] conv_ewald hex
 'created' timestamp seems very low; regarding as unix timestamp
 'modified' timestamp seems very low; regarding as unix timestamp
 'created' timestamp seems very low; regarding as unix timestamp
@@ -44,14 +44,14 @@
 'created' timestamp seems very low; regarding as unix timestamp
 'modified' timestamp seems very low; regarding as unix timestamp
   convergence/conv_ewald
-[  0.31 min] conv_images bulk3d scl
-[  0.32 min] conv_images bulk3d bcl
-[  0.32 min] conv_images bulk3d fcl
-[  0.33 min] conv_images bulk3d hex
-[  0.34 min] conv_images monolayer scl
-[  0.36 min] conv_images monolayer bcl
-[  0.37 min] conv_images monolayer fcl
-[  0.39 min] conv_images monolayer hex
+[  0.49 min] conv_images bulk3d scl
+[  0.50 min] conv_images bulk3d bcl
+[  0.51 min] conv_images bulk3d fcl
+[  0.52 min] conv_images bulk3d hex
+[  0.55 min] conv_images monolayer scl
+[  0.57 min] conv_images monolayer bcl
+[  0.59 min] conv_images monolayer fcl
+[  0.61 min] conv_images monolayer hex
 'created' timestamp seems very low; regarding as unix timestamp
 'modified' timestamp seems very low; regarding as unix timestamp
 'created' timestamp seems very low; regarding as unix timestamp
@@ -71,10 +71,10 @@
 'created' timestamp seems very low; regarding as unix timestamp
 'modified' timestamp seems very low; regarding as unix timestamp
   convergence/conv_images
-[  0.43 min] conv_direct scl
-[  0.45 min] conv_direct bcl
-[  0.46 min] conv_direct fcl
-[  0.47 min] conv_direct hex
+[  0.70 min] conv_direct scl
+[  0.72 min] conv_direct bcl
+[  0.74 min] conv_direct fcl
+[  0.76 min] conv_direct hex
 'created' timestamp seems very low; regarding as unix timestamp
 'modified' timestamp seems very low; regarding as unix timestamp
 'created' timestamp seems very low; regarding as unix timestamp
@@ -94,14 +94,14 @@
 'created' timestamp seems very low; regarding as unix timestamp
 'modified' timestamp seems very low; regarding as unix timestamp
   convergence/conv_direct
-[  0.50 min] conv_ball bulk3d scl
-[  0.51 min] conv_ball bulk3d bcl
-[  0.52 min] conv_ball bulk3d fcl
-[  0.52 min] conv_ball bulk3d hex
-[  0.54 min] conv_ball monolayer scl
-[  0.57 min] conv_ball monolayer bcl
-[  0.59 min] conv_ball monolayer fcl
-[  0.61 min] conv_ball monolayer hex
+[  0.81 min] conv_ball bulk3d scl
+[  0.82 min] conv_ball bulk3d bcl
+[  0.83 min] conv_ball bulk3d fcl
+[  0.84 min] conv_ball bulk3d hex
+[  0.87 min] conv_ball monolayer scl
+[  0.90 min] conv_ball monolayer bcl
+[  0.94 min] conv_ball monolayer fcl
+[  0.97 min] conv_ball monolayer hex
 'created' timestamp seems very low; regarding as unix timestamp
 'modified' timestamp seems very low; regarding as unix timestamp
 'created' timestamp seems very low; regarding as unix timestamp
@@ -121,14 +121,14 @@
 'created' timestamp seems very low; regarding as unix timestamp
 'modified' timestamp seems very low; regarding as unix timestamp
   convergence/conv_ball
-[  0.75 min] conv_production bulk3d scl
-[  0.86 min] conv_production bulk3d bcl
-[  0.98 min] conv_production bulk3d fcl
-[  1.11 min] conv_production bulk3d hex
-[  1.61 min] conv_production monolayer scl
-[  2.05 min] conv_production monolayer bcl
-[  2.49 min] conv_production monolayer fcl
-[  3.10 min] conv_production monolayer hex
+[  1.21 min] conv_production bulk3d scl
+[  1.38 min] conv_production bulk3d bcl
+[  1.55 min] conv_production bulk3d fcl
+[  1.72 min] conv_production bulk3d hex
+[  2.40 min] conv_production monolayer scl
+[  2.99 min] conv_production monolayer bcl
+[  3.60 min] conv_production monolayer fcl
+[  4.30 min] conv_production monolayer hex
 'created' timestamp seems very low; regarding as unix timestamp
 'modified' timestamp seems very low; regarding as unix timestamp
 'created' timestamp seems very low; regarding as unix timestamp
@@ -148,4 +148,4 @@
 'created' timestamp seems very low; regarding as unix timestamp
 'modified' timestamp seems very low; regarding as unix timestamp
   convergence/conv_production
-[  3.13 min] done
+[  4.34 min] done
