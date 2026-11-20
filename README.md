@@ -9,6 +9,7 @@ Calcula los observables del artículo *Active motion and stability of a cluster 
 - Convenciones: [`docs/CONVENTIONS.md`](docs/CONVENTIONS.md) (Figura 1 del artículo, ecs. 2 a 5).
 - Correspondencia archivo ↔ figura del manuscrito: [`docs/FIGURE_MAP.md`](docs/FIGURE_MAP.md).
 - Qué correr y qué revisar contra el texto del artículo: [`docs/CHECKLIST.md`](docs/CHECKLIST.md).
+- Chequeos automáticos de los resultados: `python3 scripts/check_results.py` (escribe `results/logs/checks.log`).
 
 ## Instalación y prueba rápida
 
@@ -18,7 +19,7 @@ Requiere Python ≥ 3.10.
 git clone https://github.com/th-martinod/swimmers-ewald
 cd swimmers-ewald
 pip install -e ".[test]"
-pytest -q                     # ~40 tests, unos segundos
+pytest -q                     # 45 tests, unos segundos
 ```
 
 Un cálculo suelto:
@@ -48,7 +49,7 @@ scripts/paper_figures.py figuras del texto principal y del SI con los nombres de
 scripts/convergence.py   gráficas de convergencia
 scripts/summary.py       números detrás de cada afirmación de la sección de resultados
 scripts/run_all.sh       reproduce todo desde cero
-results/                 se genera con scripts/run_all.sh (no se versiona en esta rama)
+results/                 se genera con scripts/run_all.sh
 results/data/            CSV del barrido
 results/figures/         figs/, figs_2/ (EPS y PDF), convergence/, preview/ (PNG)
 results/convergence/     CSV de las pruebas de convergencia
@@ -63,7 +64,8 @@ Para cada red (SCL, BCL, FCL, HEX), geometría, radio R del spinner, parámetro 
 |---|---|
 | `T` | V_conf · e_⊥ con V_conf = [v(A) − v(B)] − [v(C) − v(D)] (ec. 4) |
 | `A_perp` | A_⊥/h = −T sin θ (ec. 5). Negativo es estable |
-| `B_perp` | B_⊥/h = V^f · e_⊥, con V^f el promedio de la velocidad del fluido en la bola de radio d_nn/2 centrada en el par (ec. 3) |
+| `B_perp` | B_⊥/h = V^f · e_⊥, con V^f el promedio de la velocidad del fluido en la bola de radio √2h/4 centrada en el par, igual en todas las redes (ec. 3) |
+| `B_img`, `gradp_img` | velocidad y gradiente de presión de las imágenes en el centro del par (a lo largo de e_⊥). B_perp = −QR/(10π r_f³) + B_img + r_f² gradp_img/10 |
 | `err_A`, `err_B` | distancia entre la suma parcial de mayor corte y el valor extrapolado (0 en Ewald para A) |
 
 Unidades: μ = 1, ζV^S = 1, Q = 1.
@@ -84,7 +86,7 @@ El promedio en la bola se evalúa con el teorema del valor medio para campos bia
 |---|---|
 | `test_symmetry.py` | sentido de giro de la Figura 1, v(r₁) = v(r₂), campo par respecto al centro, V_conf = 2[v(A) − v(B)], HEX estable para 0 < \|θ\| < π/6 e inestable en (π/6, π/4), periodicidad π/3, amplitud sin 6θ de la Sección S3, cancelación exacta en la SCL solo para R = Q/2, orientación de BCL y FCL |
 | `test_ewald.py` | independencia respecto a ξ, Ewald contra suma directa 3D |
-| `test_average.py` | promedio en la bola contra la suma de Fourier en las 8 combinaciones red × geometría, promedio cerrado del par aislado |
+| `test_average.py` | promedio en la bola contra la suma de Fourier en las 8 combinaciones red × geometría, promedio cerrado del par aislado, radio común que contiene las fuerzas del par y ninguna de los vecinos |
 
 ## Reproducir todo
 
@@ -104,12 +106,13 @@ PYTHONPATH=src python3 scripts/convergence.py
 - Otra red: agregar su base en `lattices.basis` con a⁽³⁾ sobre z y la proyección de a⁽¹⁾ sobre +x.
 - Otro observable: calcularlo en `pair._scalars` a partir de las velocidades en `eval_points` y agregarlo a
   `sweep.FIELDS`.
-- Otro subvolumen: cambiar `self_ball_average` y el término de valor medio en `pair._scalars`, y el factor de forma
-  en `tests/test_average.py`.
+- Otro radio de la bola: cambiar `R_F_OVER_H` en `backends.py`, o recalcular desde las columnas `B_img` y `gradp_img`.
+- Otra forma de subvolumen: cambiar `self_ball_average` y el término de valor medio en `pair._scalars`, y el factor
+  de forma en `tests/test_average.py`.
 
 ## Limitaciones
 
 - Fuerzas puntuales. A_⊥ es un proxy cinemático del torque orientador, porque en una red de Bravais los centros
   de los dos spinners se advectan con la misma velocidad.
-- El valor de B_⊥ depende del subvolumen de referencia. La bola de radio d_nn/2 es la mayor que no se solapa con
-  las de los vecinos y no tiene orientación propia.
+- El valor de B_⊥ depende del subvolumen de referencia. Se usa la misma bola (radio √2h/4) en todas las redes para
+  que la comparación entre redes a igual Q/h no dependa de esa elección. La bola no tiene orientación propia.

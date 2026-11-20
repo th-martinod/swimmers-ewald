@@ -66,7 +66,7 @@ def series(field, th, R):
     P, F = sources(th, 1.0, R)
     v = field.velocity_vs_L(eval_points(th, 1.0, R), P, F)
     gp = field.grad_p_vs_L(P, F)
-    return _scalars(v, gp, th, qh, e, P, F, field.d_nn / 2)
+    return _scalars(v, gp, th, qh, e, P, F, field.r_f)
 
 
 # ------------------------------------------------------------------------------------------------
@@ -176,7 +176,7 @@ def conv_images():
             f = make_field(geo, lat, H0, **({"gradp_L_3d": tuple(Ls)} if geo == "bulk3d" else {"L_over_h": tuple(Ls)}))
             _, e = frame(TH)
             P, F = sources(TH, 1.0, R0)
-            a = f.d_nn / 2
+            a = f.r_f
             term = a**2 / 10 * f.grad_p_vs_L(P, F) @ e
             if geo == "bulk3d":     # absolutely convergent (d^-5): reference = largest cutoff, not plotted
                 ref = term[-1:]
@@ -227,7 +227,7 @@ def _fourier(k, w, P, F):
 
 
 def fourier_ball(f, P, F, n, nq=240):
-    a = f.d_nn / 2
+    a = f.r_f
     if f.geometry == "bulk3d":
         B, V0 = reciprocal(f.A)
         k = _cube(n, 3) @ B

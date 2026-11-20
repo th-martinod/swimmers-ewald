@@ -10,7 +10,11 @@ Conventions (docs/CONVENTIONS.md, Figure 1 of the article):
 - A_perp = (mu h / zeta V^S) (Qhat x V_conf) . (a1hat x Qhat) = -(mu h / zeta V^S) T sin(theta),
   with T = V_conf . e. A_perp < 0 pushes Q back towards a1 (stabilizing).
 - B_perp: [V^f]_perp = (zeta V^S / mu) (B_perp / h) e, with V^f the average of the fluid velocity over
-  the ball of radius r_f = d_nn / 2 centred on the pair (SI Section S1).
+  the ball of radius r_f = sqrt(2) h / 4 centred on the pair, the same for every lattice (SI Section S1).
+  B_perp = B_self + B_img + r_f^2 gradp_img / 10, with B_self = -Q R / (10 pi r_f^3) the exact average of the
+  flow of the pair itself, B_img the velocity of the images at the pair centre and gradp_img the pressure
+  gradient of the images there (both along e). The last two are exported so that B_perp can be re-evaluated
+  for any other radius without repeating the lattice sums.
 Units: mu = 1, zeta V^S = 1, Q = 1, so A_perp/h and B_perp/h are given in units of 1/Q.
 """
 import numpy as np
@@ -58,8 +62,11 @@ def _scalars(v, gp, theta, qh, e, P, F, a):
     T = Vconf @ e
     # average over the ball |r| < a: own pair exactly, images by the biharmonic mean-value theorem
     v_self0 = sum(stokeslet_dot(-P[s], F[s]) for s in range(4))
-    Vf = self_ball_average(P, F, a) + (v[..., 6, :] - v_self0) + a**2 / 10 * gp
-    return {"T": T, "A_perp": -T * np.sin(theta), "B_perp": Vf @ e, "Qdot_perp": (v[..., 5, :] - v[..., 4, :]) @ e}
+    v_img = (v[..., 6, :] - v_self0) @ e
+    gp_img = gp @ e
+    B = self_ball_average(P, F, a) @ e + v_img + a**2 / 10 * gp_img
+    return {"T": T, "A_perp": -T * np.sin(theta), "B_perp": B, "B_img": v_img, "gradp_img": gp_img,
+            "Qdot_perp": (v[..., 5, :] - v[..., 4, :]) @ e}
 
 
 def observables(field, theta, Q=1.0, R=0.5):
@@ -70,7 +77,7 @@ def observables(field, theta, Q=1.0, R=0.5):
     qh, e = frame(theta)
     P, F = sources(theta, Q, R)
     X = eval_points(theta, Q, R)
-    a = field.d_nn / 2
+    a = field.r_f
     if field.direct:
         v = field.velocity_vs_L(X, P, F)
         gp = field.grad_p_vs_L(P, F)
@@ -88,5 +95,6 @@ def observables(field, theta, Q=1.0, R=0.5):
         series = _scalars(np.broadcast_to(v, (len(gps),) + v.shape), gps, theta, qh, e, P, F, a)
         out = {k: float(y[-1]) for k, y in series.items()}
         err = {k: float(abs(y[-1] - y[-2])) for k, y in series.items()}
-    return {"T": out["T"], "A_perp": out["A_perp"], "B_perp": out["B_perp"], "Qdot_perp": out["Qdot_perp"],
+    return {"T": out["T"], "A_perp": out["A_perp"], "B_perp": out["B_perp"], "B_img": out["B_img"],
+            "gradp_img": out["gradp_img"], "Qdot_perp": out["Qdot_perp"],
             "err_A": err["A_perp"], "err_B": err["B_perp"]}

@@ -9,3 +9,4 @@ python3 -m spinners.sweep configs/paper.toml --out results/data 2>&1 | tee resul
 python3 scripts/paper_figures.py 2>&1 | tee results/logs/paper_figures.log
 python3 scripts/convergence.py 2>&1 | tee results/logs/convergence.log
 python3 scripts/summary.py 2>&1 | tee results/logs/summary.log
+python3 scripts/check_results.py 2>&1 | tee results/logs/check_results.out     # last: exits with 1 if a check fails

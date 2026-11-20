@@ -11,9 +11,9 @@ Las figuras 1 y 6 (diagramas) no salen de este código.
 |---|---|---|
 | 2 | `figs/CM_av_all_3D`, `figs/CM_vs_ang_all_3D` | B̄_⊥/h vs Q/h y B_⊥/B̄_⊥ vs θ, redes 3D SCL, BCL, FCL, HEX |
 | 3 | `figs/CM_av_all_2D`, `figs/CM_vs_ang_all_2D` | igual para monocapas |
-| 4 | `figs/stability_{BCL,FCL,HEX}_3D` | signo de A_⊥ en el plano (θ, Q/h), azul A_⊥ < 0, rojo A_⊥ > 0, línea negra A_⊥ = 0 |
+| 4 | `figs/stability_{BCL,FCL,HEX}_3D` | signo de A_⊥ en el plano (θ, Q/h), azul A_⊥ < 0, rojo A_⊥ > 0, línea negra gruesa A_⊥ = 0, líneas finas \|A_⊥\|/h = 10^k con etiqueta |
 | 5 | `figs/stability_{BCL,FCL,HEX}_2D` | igual para monocapas |
-| 7 | `figs/conf_min_all` | mínimo de A_⊥/h para θ > 0 (antihorario, marcador lleno) y θ < 0 (horario, vacío), HEX 2D, HEX 3D, BCL 3D |
+| 7 | `figs/conf_min_all` | mínimo de A_⊥/h para θ > 0 (antihorario, línea continua y marcador lleno) y θ < 0 (horario, línea discontinua y marcador vacío pequeño), HEX 2D, HEX 3D, BCL 3D. Donde coinciden se ve un marcador lleno con centro blanco |
 
 ## SI
 
@@ -34,6 +34,11 @@ Las figuras 1 y 6 (diagramas) no salen de este código.
   `overpic` en (57, 98).
 - Los mínimos se refinan con una parábola por los tres puntos de la malla alrededor del mínimo. Si no hay
   orientación estable de un lado, el punto se omite.
+- Los mapas interpolan A_⊥/(Q/h)⁵ (que varía lento) entre las 15 filas calculadas para trazar las curvas de nivel.
+  Las etiquetas van en la columna θ = −0.26. Las ondulaciones junto a la franja roja estrecha de la FCL (0 < θ < 0.09)
+  vienen de la resolución en θ (0.016 rad), no de la física.
+- Todas las series llevan línea y marcadores pequeños. En las curvas contra θ (una por cada Q/h) los marcadores van
+  cada 4 puntos, desplazados entre redes para que se distingan las curvas superpuestas (BCL y HEX en 3D con R = Q/2).
 - Colores y marcadores siguen a las figuras originales (SCL cuadrado, BCL triángulo, FCL círculo, HEX rombo).
   El verde pasó a verde azulado y el café a ocre para que la paleta sea distinguible con daltonismo.
 

@@ -14,7 +14,8 @@ import numpy as np
 from .backends import make_field
 from .pair import observables
 
-FIELDS = ["geometry", "lattice", "R", "h", "Q_over_h", "theta", "T", "A_perp", "B_perp", "err_A", "err_B"]
+FIELDS = ["geometry", "lattice", "R", "h", "Q_over_h", "theta", "T", "A_perp", "B_perp", "err_A", "err_B",
+          "B_img", "gradp_img"]
 
 
 def theta_grid(n, tmax):

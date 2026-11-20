@@ -22,11 +22,13 @@ RS = [0.5, 0.25]
 NROWS = 15 * 161
 
 REF = {  # (geometry, lattice): (B_perp, A_perp) at h = 5, theta = 0.3, R = 0.5. None means ~0
-    ("bulk3d", "scl"): (-3.023e-4, None), ("bulk3d", "bcl"): (-5.563e-4, -9.044e-4),
-    ("bulk3d", "fcl"): (-9.661e-4, -2.132e-3), ("bulk3d", "hex"): (-5.418e-4, -6.199e-4),
-    ("monolayer", "scl"): (-2.099e-4, None), ("monolayer", "bcl"): (-5.203e-4, -6.200e-4),
-    ("monolayer", "fcl"): (-1.039e-3, -1.703e-3), ("monolayer", "hex"): (-4.496e-4, -6.017e-4),
+    # B_perp with the common reference ball r_f = sqrt(2) h / 4 (A_perp does not depend on it)
+    ("bulk3d", "scl"): (-2.1017e-3, None), ("bulk3d", "bcl"): (-1.8882e-3, -9.044e-4),
+    ("bulk3d", "fcl"): (-9.662e-4, -2.132e-3), ("bulk3d", "hex"): (-2.4892e-3, -6.199e-4),
+    ("monolayer", "scl"): (-1.9893e-3, None), ("monolayer", "bcl"): (-1.7127e-3, -6.200e-4),
+    ("monolayer", "fcl"): (-1.0391e-3, -1.703e-3), ("monolayer", "hex"): (-2.3750e-3, -6.017e-4),
 }
+R_F_OVER_H = np.sqrt(2) / 4
 SIX_FOLD = {"monolayer": 0.927, "bulk3d": 0.955}
 
 lines = []
@@ -97,17 +99,26 @@ def main():
                   f"max A_perp = {np.max(A[neg]):.3e} over {neg.sum()} rows")
             check(np.all(A[pos] > 0), f"{tag} A>0 on 0.55<|th|<pi/4",
                   f"min A_perp = {np.min(A[pos]):.3e} over {pos.sum()} rows")
-            worst_par, worst_spread = 0.0, 0.0
+            worst_par, spreads = 0.0, []
             for h, m in by_h(c):
                 t, a, b = th[m], A[m], B[m]
                 key = {round(x, 10): y for x, y in zip(t, a)}
                 diffs = [abs(y - key[round(-x, 10)]) for x, y in zip(t, a) if round(-x, 10) in key]
                 worst_par = max(worst_par, max(diffs) / np.max(np.abs(a)))
-                worst_spread = max(worst_spread, (b.max() - b.min()) / abs(b.mean()))
+                spreads.append((h, (b.max() - b.min()) / abs(b.mean())))
             check(worst_par <= 1e-6, f"{tag} A even in theta",
                   f"max_h max|A(th)-A(-th)|/max|A| = {worst_par:.3e} (<= 1e-6)")
-            check(worst_spread < 1e-3, f"{tag} B independent of theta",
-                  f"max_h (max-min)/|mean| of B_perp = {worst_spread:.3e} (< 1e-3)")
+            if R == 0.5:
+                # square of forces: its coupling with the six-fold lattice cancels at low order
+                worst = max(sp for _, sp in spreads)
+                check(worst < 1e-3, f"{tag} B independent of theta",
+                      f"max_h (max-min)/|mean| of B_perp = {worst:.3e} (< 1e-3)")
+            else:
+                # rectangle of forces: real oscillation of period pi/3 whose relative size decays as (Q/h)^2
+                scaled = np.array([sp * h**2 for h, sp in spreads])
+                check(scaled.max() / scaled.min() < 1.2, f"{tag} theta dependence of B decays as (Q/h)^2",
+                      f"(max-min)/|mean| from {spreads[0][1]:.2e} (h={spreads[0][0]:g}) to {spreads[-1][1]:.2e} "
+                      f"(h={spreads[-1][0]:g}), spread*h^2 varies by a factor {scaled.max() / scaled.min():.3f} (< 1.2)")
 
     # 5. sign of the theta-averaged B_perp (uniform grid of 80 angles in [-pi, pi), as in the figures)
     grid = np.round(np.linspace(-np.pi, np.pi, 81)[:-1], 12)
@@ -137,13 +148,22 @@ def main():
         ratio = T / (126 * K * np.sin(6 * th))
         check(abs(ratio - ref) <= 2e-3, f"7 six-fold amplitude {geo}", f"T/(126 K sin 6th) = {ratio:.4f} vs {ref}")
 
-    # 8. error columns
+    # 8. error columns, relative to the largest |B_perp| over theta at the same h (B_perp crosses zero in some
+    # lattices, so a point-wise relative error is meaningless there)
     for (lat, geo, R), c in data.items():
-        rel = np.max(c["err_B"] / np.abs(c["B_perp"]))
+        rel = max(np.max(c["err_B"][m]) / np.max(np.abs(c["B_perp"][m])) for _, m in by_h(c))
         if geo == "bulk3d":
-            check(rel < 1e-4, f"8 err_B {lat} {geo} R={R:g}", f"max err_B/|B_perp| = {rel:.3e} (< 1e-4)")
+            check(rel < 1e-4, f"8 err_B {lat} {geo} R={R:g}", f"max_h max err_B / max|B_perp| = {rel:.3e} (< 1e-4)")
         else:
-            report("INFO", f"8 err_B {lat} {geo} R={R:g}", f"max err_B/|B_perp| = {rel:.3e} (report only)")
+            report("INFO", f"8 err_B {lat} {geo} R={R:g}",
+                   f"max_h max err_B / max|B_perp| = {rel:.3e} (conservative bound, report only)")
+
+    # 9. decomposition B_perp = -Q R/(10 pi r_f^3) + B_img + r_f^2 gradp_img / 10, with r_f = sqrt(2) h / 4
+    for (lat, geo, R), c in data.items():
+        rf = R_F_OVER_H * c["h"]
+        rebuilt = -R / (10 * np.pi * rf**3) + c["B_img"] + rf**2 / 10 * c["gradp_img"]
+        dev = np.max(np.abs(rebuilt - c["B_perp"])) / np.max(np.abs(c["B_perp"]))
+        check(dev < 1e-10, f"9 B decomposition {lat} {geo} R={R:g}", f"max deviation / max|B_perp| = {dev:.2e} (< 1e-10)")
 
     summary = f"\nTOTAL: {counts['PASS']} PASS, {counts['FAIL']} FAIL, {counts['WARN']} WARN, {counts['INFO']} INFO"
     lines.append(summary)
