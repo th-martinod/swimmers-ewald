@@ -81,6 +81,19 @@ def style_sci(ax):
     ax.ticklabel_format(axis="y", style="sci", scilimits=(-3, 3), useMathText=True)
 
 
+def series(lat, ms=3.2, lw=0.9, filled=False, every=None):
+    """Line plus small marker of a lattice. every = (offset, step) thins the markers of dense curves; the
+    offset differs between lattices so that curves on top of each other stay distinguishable."""
+    kw = dict(color=COLOR[lat], lw=lw, marker=MARK[lat], ms=ms, mec=COLOR[lat], mew=0.7,
+              mfc=COLOR[lat] if filled else "white")
+    if every:
+        kw["markevery"] = every
+    return kw
+
+
+EVERY = {"scl": 0, "bcl": 1, "fcl": 2, "hex": 3}
+
+
 # ------------------------------------------------------------------ velocities (Figs. 2, 3, S1, S2)
 def velocity_figures(geo, R, lats, sub, suffix):
     tag = "3D" if geo == "bulk3d" else "2D"
@@ -90,12 +103,10 @@ def velocity_figures(geo, R, lats, sub, suffix):
         c = load(lat, geo, R)
         qh, rows = rows_by_qh(c, "B_perp", on_grid(c, 81, np.pi))
         Bbar = np.array([b.mean() for _, b in rows])
-        axL.plot(qh, Bbar, ls="none", marker=MARK[lat], ms=4.5, mfc="white", mec=COLOR[lat], mew=0.9,
-                 label=NAME[lat])
-        for (th, b), bb in zip(rows, Bbar):
-            axR.plot(th, b / bb, ls="none", marker=MARK[lat], ms=2.6, mfc="white", mec=COLOR[lat], mew=0.5)
-        axR.plot([], [], ls="none", marker=MARK[lat], ms=4.5, mfc="white", mec=COLOR[lat], mew=0.9,
-                 label=NAME[lat])
+        axL.plot(qh, Bbar, label=NAME[lat], **series(lat))
+        for (th, b), bb in zip(rows, Bbar):     # one curve per Q/h
+            axR.plot(th, b / bb, **series(lat, ms=2.2, lw=0.6, every=(EVERY[lat], 4)))
+        axR.plot([], [], label=NAME[lat], **series(lat))
     axL.axhline(0, color=MUTED, lw=0.4)
     axL.set_xlabel(r"$Q/h$")
     axL.set_ylabel(r"$\overline{B}_\perp/h$")
@@ -115,7 +126,18 @@ def velocity_figures(geo, R, lats, sub, suffix):
 
 
 # ------------------------------------------------------------------ stability maps (Figs. 4, 5, S4, S5)
-def stability_map(lat, geo, R, sub, suffix):
+def refine(qh, Z, n=400):
+    """Fine Q/h grid for the contours. A_perp grows like (Q/h)^5, so A_perp/(Q/h)^5 varies slowly with Q/h:
+    it is interpolated linearly between the computed rows and multiplied back."""
+    qf = np.linspace(qh.min(), qh.max(), n)
+    g = Z / qh[:, None] ** 5
+    G = np.array([np.interp(qf, qh, g[:, j]) for j in range(Z.shape[1])]).T
+    return qf, G * qf[:, None] ** 5
+
+
+def stability_map(lat, geo, R, sub, suffix, label_theta=-0.26):
+    """Blue A_perp < 0 (stable), red A_perp > 0, thick black line A_perp = 0, thin lines |A_perp|/h = 10^k
+    labelled along the column theta = label_theta."""
     tag = "3D" if geo == "bulk3d" else "2D"
     c = load(lat, geo, R)
     sel = on_grid(c, 101, np.pi / 4) & (np.abs(c["theta"]) > 1e-12)   # theta = 0 is the trivial zero
@@ -126,18 +148,25 @@ def stability_map(lat, geo, R, sub, suffix):
         m = sel & np.isclose(c["Q_over_h"], q)
         o = np.argsort(c["theta"][m])
         Z[i] = c["A_perp"][m][o]
+    qf, Zf = refine(qh, Z)
     fig = plt.figure(figsize=(3.3, 3.2))
     ax = fig.add_axes([0.2, 0.14, 0.75, 0.76])      # top 8 % free for the overpic panel letter
-    big = np.abs(Z).max() * 10
-    ax.contourf(th, qh, Z, levels=[-big, 0, big], colors=[STABLE, UNSTABLE])
-    ax.contour(th, qh, Z, levels=[0], colors=INK, linewidths=0.6)
+    big = np.abs(Zf).max() * 10
+    ax.contourf(th, qf, Zf, levels=[-big, 0, big], colors=[STABLE, UNSTABLE])
+    L = np.log10(np.abs(Zf) + 1e-300)
+    lev = np.arange(np.floor(np.log10(np.abs(Z[0]).max())) - 1, np.ceil(L.max()))
+    cs = ax.contour(th, qf, L, levels=lev, colors=INK, linewidths=0.35, linestyles="solid")
+    j = int(np.argmin(np.abs(th - label_theta)))
+    pos = [(th[j], np.interp(v, L[:, j], qf)) for v in lev if L[:, j].min() < v < L[:, j].max()]
+    ax.clabel(cs, manual=pos, fmt=lambda v: rf"$10^{{{int(v)}}}$", fontsize=6, inline_spacing=1, colors="white")
+    ax.contour(th, qf, Zf, levels=[0], colors=INK, linewidths=1.0)
     ax.set_xlim(-np.pi / 4, np.pi / 4)
     ax.set_ylim(qh.min(), qh.max())
     ax.set_xticks([-0.5, 0, 0.5])
     ax.set_xlabel(r"$\theta$")
     ax.set_ylabel(r"$Q/h$")
-    for s in ax.spines.values():
-        s.set_zorder(5)
+    for s_ in ax.spines.values():
+        s_.set_zorder(5)
     save(fig, sub, f"stability_{NAME[lat]}_{tag}{suffix}", tight=False)
 
 
@@ -168,15 +197,18 @@ def minima_figure(R, sub, suffix, size):
     fig, ax = plt.subplots(figsize=size)
     for lat, geo, lab, col, mk in MIN_SERIES:
         c = load(lat, geo, R)
-        for side, word, face, ms in ((+1, "counterclockwise", col, 5.5), (-1, "clockwise", "white", 4.0)):
+        # filled large marker (theta > 0) under a small open one (theta < 0): where both coincide, as in
+        # HEX and BCL 3D by symmetry, the point shows as a filled marker with a white centre
+        for side, word, face, ls, ms in ((+1, "counterclockwise", col, "-", 4.4), (-1, "clockwise", "white", "--", 2.4)):
             qh, m = minima(c, side)
-            ax.plot(qh, m, ls="none", marker=mk, ms=ms, mfc=face, mec=col, mew=0.9, label=f"{lab} {word}")
+            ax.plot(qh, m, color=col, lw=0.9, ls=ls, marker=mk, ms=ms, mfc=face, mec=col, mew=0.7,
+                    label=f"{lab} {word}")
     ax.axhline(0, color=MUTED, lw=0.4)
     ax.set_xlabel(r"$Q/h$")
     ax.set_ylabel(r"$\min A_\perp/h$")
     ax.set_xlim(0, 0.26)
     style_sci(ax)
-    ax.legend(loc="lower left")
+    ax.legend(loc="lower left", fontsize=7, handlelength=2.6)
     save(fig, sub, f"conf_min_all{suffix}")
 
 
@@ -189,8 +221,7 @@ def magnitude_figure(geo, R=0.5):
         qh, rows = rows_by_qh(c, "A_perp", on_grid(c, 101, np.pi / 4))
         m = np.array([np.mean(np.abs(a)) for _, a in rows])
         m = np.maximum(m, 1e-22)                          # exact zeros of the SCL cancellation
-        ax.semilogy(qh, m, ls="none", marker=MARK[lat], ms=4.5, mfc="white", mec=COLOR[lat], mew=0.9,
-                    label=NAME[lat])
+        ax.semilogy(qh, m, label=NAME[lat], **series(lat))
     ax.set_xlabel(r"$Q/h$")
     ax.set_ylabel(r"$\overline{|A_\perp|}/h$")
     ax.set_xlim(0, 0.26)
@@ -204,7 +235,7 @@ def main():
         velocity_figures(geo, 0.5, LATS, "figs", "")
         for lat in ("bcl", "fcl", "hex"):
             stability_map(lat, geo, 0.5, "figs", "")
-    minima_figure(0.5, "figs", "", (6.2, 3.6))
+    minima_figure(0.5, "figs", "", (3.4, 2.9))      # single-column figure (width = \\linewidth)
     print("SI (R = Q/4 unless stated):")
     velocity_figures("bulk3d", 0.25, ["bcl", "hex"], "figs_2", "_R_p25")
     velocity_figures("monolayer", 0.25, ["hex"], "figs_2", "_R_p25")

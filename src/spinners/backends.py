@@ -15,6 +15,10 @@ from .lattices import basis, points
 
 GEOMETRIES = ("bulk3d", "monolayer")
 GRADP_L_3D = (16, 24)
+# Radius of the reference ball over which the fluid velocity is averaged (Eq. 3), in units of h. The same for
+# every lattice and geometry: the largest ball centred on the pair that does not overlap with the balls of the
+# nearest neighbours in any of the four lattices (half the FCL nearest-neighbour distance, sqrt(2) h / 2).
+R_F_OVER_H = np.sqrt(2.0) / 4
 
 
 class Field:
@@ -34,6 +38,7 @@ class Field:
         else:
             raise ValueError(f"geometry '{geometry}' not implemented")
         self.L = self.images.L
+        self.r_f = R_F_OVER_H * self.h
 
     def velocity(self, X, P, F):
         """Velocity (E,3) at X. For the monolayer, the extrapolated direct sum."""

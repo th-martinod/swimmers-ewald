@@ -1,4 +1,4 @@
-"""The average over the reference sub-volume (ball of radius d_nn/2) against an independent Fourier sum."""
+"""The average over the reference sub-volume (ball of radius sqrt(2) h / 4) against an independent Fourier sum."""
 import numpy as np
 import pytest
 
@@ -59,7 +59,7 @@ def test_ball_average_matches_fourier_sum(fields, geo, lattice):
     th = 0.3
     P, F = sources(th, 1.0, 0.5)
     _, e = frame(th)
-    ref = (fourier_ball_bulk if geo == "bulk3d" else fourier_ball_monolayer)(fld.A, fld.d_nn / 2, P, F) @ e
+    ref = (fourier_ball_bulk if geo == "bulk3d" else fourier_ball_monolayer)(fld.A, fld.r_f, P, F) @ e
     assert np.isclose(observables(fld, th, 1.0, 0.5)["B_perp"], ref, rtol=2e-3)
 
 
@@ -69,3 +69,21 @@ def test_self_average_of_the_isolated_pair():
         P, F = sources(th, 1.0, R)
         _, e = frame(th)
         assert np.allclose(self_ball_average(P, F, a), -R * e / (10 * PI * a**3), atol=1e-16)
+
+
+@pytest.mark.parametrize("geo", ["bulk3d", "monolayer"])
+@pytest.mark.parametrize("lattice", ["scl", "hex", "bcl", "fcl"])
+def test_reference_ball_is_common_and_isolates_the_pair(fields, geo, lattice):
+    """Same radius sqrt(2) h / 4 in every lattice. For Q/h <= 0.25 it contains the four point forces of the
+    pair and none of the neighbours (needed by the mean-value evaluation), and it does not overlap with the
+    balls of the nearest neighbours."""
+    h = 4.0                                            # Q/h = 0.25, the largest value of the article
+    fld = fields(geo, lattice, h)
+    assert np.isclose(fld.r_f, np.sqrt(2) * h / 4)
+    assert 2 * fld.r_f <= fld.d_nn * (1 + 1e-12)
+    for th in (0.0, 0.4, 1.3):
+        for R in (0.5, 0.25):
+            P, _ = sources(th, 1.0, R)
+            reach = np.linalg.norm(P, axis=1).max()
+            assert reach < fld.r_f
+            assert fld.d_nn - reach > fld.r_f

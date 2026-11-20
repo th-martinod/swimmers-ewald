@@ -4,8 +4,11 @@
 
 ```bash
 pip install -e ".[test]"
-bash scripts/run_all.sh          # tests, barrido, figuras, convergencia y resumen
+bash scripts/run_all.sh          # tests, barrido, figuras, convergencia, chequeos y resumen
 ```
+
+`scripts/check_results.py` resume los chequeos de los datos en `results/logs/checks.log`. Todos deben dar PASS
+(las líneas INFO solo informan).
 
 El barrido (`configs/paper.toml`, 240 tareas) es lo que más tarda. Se puede acelerar con
 `python3 -m spinners.sweep configs/paper.toml --out results/data --workers N`.
@@ -24,7 +27,7 @@ El barrido (`configs/paper.toml`, 240 tareas) es lo que más tarda. Se puede ace
 ## 3. Contrastar el texto con `results/logs/summary.log`
 
 Afirmaciones del texto principal que dependen de los números y que pueden cambiar con la nueva definición de B_⊥
-(promedio en la bola) y la convención aprobada de A_⊥:
+(promedio en la bola de radio común √2h/4) y la convención aprobada de A_⊥:
 
 | # | Afirmación | Bloque de `summary.py` |
 |---|---|---|
