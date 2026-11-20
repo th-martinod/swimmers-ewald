@@ -1,0 +1,77 @@
+C:\Users\thomm\OneDrive\Documentos\repos\swimmers-ewald\scripts\summary.py:85: RuntimeWarning: All-NaN slice encountered
+  f"|A| {np.nanmin(ra):.2f} to {np.nanmax(ra):.2f}" + ("" if ok.any() else "  (A = 0 at R = Q/2)"))
+== B_perp/h averaged over theta (units 1/Q), R = Q/2
+  3D SCL: Q/h=0.1: -8.804e-05 (spread/|mean| 3.14)  Q/h=0.2: -6.919e-04 (spread/|mean| 3.11)  Q/h=0.25: -1.334e-03 (spread/|mean| 3.08)
+  3D BCL: Q/h=0.1: -7.175e-05 (spread/|mean| 0.00)  Q/h=0.2: -5.564e-04 (spread/|mean| 0.00)  Q/h=0.25: -1.063e-03 (spread/|mean| 0.00)
+  3D FCL: Q/h=0.1: -9.911e-05 (spread/|mean| 2.04)  Q/h=0.2: -7.622e-04 (spread/|mean| 1.78)  Q/h=0.25: -1.452e-03 (spread/|mean| 1.58)
+  3D HEX: Q/h=0.1: -6.938e-05 (spread/|mean| 0.00)  Q/h=0.2: -5.419e-04 (spread/|mean| 0.00)  Q/h=0.25: -1.039e-03 (spread/|mean| 0.00)
+  2D SCL: Q/h=0.1: -7.080e-05 (spread/|mean| 3.52)  Q/h=0.2: -5.615e-04 (spread/|mean| 3.45)  Q/h=0.25: -1.089e-03 (spread/|mean| 3.40)
+  2D BCL: Q/h=0.1: -9.387e-05 (spread/|mean| 0.66)  Q/h=0.2: -7.504e-04 (spread/|mean| 0.62)  Q/h=0.25: -1.465e-03 (spread/|mean| 0.58)
+  2D FCL: Q/h=0.1: -1.546e-04 (spread/|mean| 1.01)  Q/h=0.2: -1.240e-03 (spread/|mean| 1.06)  Q/h=0.25: -2.430e-03 (spread/|mean| 1.09)
+  2D HEX: Q/h=0.1: -5.704e-05 (spread/|mean| 0.00)  Q/h=0.2: -4.496e-04 (spread/|mean| 0.00)  Q/h=0.25: -8.681e-04 (spread/|mean| 0.00)
+
+== 2D / 3D ratio of the theta-averaged velocity, R = Q/2
+  SCL: min 0.80  max 0.82
+  BCL: min 1.30  max 1.38
+  FCL: min 1.54  max 1.67
+  HEX: min 0.82  max 0.84
+
+== R = Q/4 vs R = Q/2: ratio of the theta-averaged velocity and of the mean |A_perp|
+  3D SCL: velocity 0.50 to 0.51   |A| nan to nan  (A = 0 at R = Q/2)
+  3D BCL: velocity 0.50 to 0.51   |A| 0.25 to 0.28
+  3D FCL: velocity 0.50 to 0.51   |A| 0.25 to 0.29
+  3D HEX: velocity 0.50 to 0.51   |A| 0.25 to 0.26
+  2D SCL: velocity 0.50 to 0.50   |A| nan to nan  (A = 0 at R = Q/2)
+  2D BCL: velocity 0.50 to 0.50   |A| 0.25 to 0.28
+  2D FCL: velocity 0.50 to 0.50   |A| 0.25 to 0.28
+  2D HEX: velocity 0.50 to 0.51   |A| 0.25 to 0.26
+
+== stable window around theta = 0, (theta_minus, theta_plus) in rad, R = Q/2 and R = Q/4
+  R=0.5 3D BCL: Q/h=0.025: (-0.52,+0.52) width 1.05  Q/h=0.05: (-0.52,+0.52) width 1.05  Q/h=0.1: (-0.52,+0.52) width 1.05  Q/h=0.2: (-0.52,+0.52) width 1.05  Q/h=0.25: (-0.52,+0.52) width 1.05
+  R=0.5 3D FCL: Q/h=0.025: (-0.43,+0.00) width 0.43  Q/h=0.05: (-0.43,+0.00) width 0.43  Q/h=0.1: (-0.43,+0.00) width 0.43  Q/h=0.2: (-0.43,+0.00) width 0.43  Q/h=0.25: (-0.43,+0.00) width 0.43
+  R=0.5 3D HEX: Q/h=0.025: (-0.52,+0.52) width 1.05  Q/h=0.05: (-0.52,+0.52) width 1.05  Q/h=0.1: (-0.52,+0.52) width 1.05  Q/h=0.2: (-0.52,+0.52) width 1.05  Q/h=0.25: (-0.52,+0.52) width 1.05
+  R=0.5 2D BCL: Q/h=0.025: (-0.52,+0.53) width 1.06  Q/h=0.05: (-0.52,+0.53) width 1.06  Q/h=0.1: (-0.52,+0.53) width 1.06  Q/h=0.2: (-0.52,+0.54) width 1.06  Q/h=0.25: (+0.00,+0.54) width 0.54
+  R=0.5 2D FCL: Q/h=0.025: (-0.43,+0.00) width 0.43  Q/h=0.05: (-0.43,+0.00) width 0.43  Q/h=0.1: (-0.43,+0.00) width 0.43  Q/h=0.2: (-0.42,+0.00) width 0.42  Q/h=0.25: (-0.42,+0.00) width 0.42
+  R=0.5 2D HEX: Q/h=0.025: (-0.52,+0.52) width 1.05  Q/h=0.05: (-0.52,+0.52) width 1.05  Q/h=0.1: (-0.52,+0.52) width 1.05  Q/h=0.2: (-0.52,+0.52) width 1.05  Q/h=0.25: (-0.52,+0.52) width 1.05
+  R=0.25 3D BCL: Q/h=0.025: (-0.52,+0.52) width 1.05  Q/h=0.05: (-0.52,+0.52) width 1.05  Q/h=0.1: (-0.52,+0.52) width 1.05  Q/h=0.2: (-0.52,+0.52) width 1.05  Q/h=0.25: (-0.52,+0.52) width 1.05
+  R=0.25 3D FCL: Q/h=0.025: (-0.43,+0.00) width 0.43  Q/h=0.05: (-0.43,+0.00) width 0.43  Q/h=0.1: (-0.44,+0.00) width 0.44  Q/h=0.2: (-0.45,+0.00) width 0.45  Q/h=0.25: (-0.45,+0.00) width 0.45
+  R=0.25 3D HEX: Q/h=0.025: (-0.52,+0.52) width 1.05  Q/h=0.05: (-0.52,+0.52) width 1.05  Q/h=0.1: (-0.52,+0.52) width 1.05  Q/h=0.2: (-0.52,+0.52) width 1.05  Q/h=0.25: (-0.52,+0.52) width 1.05
+  R=0.25 2D BCL: Q/h=0.025: (-0.52,+0.53) width 1.06  Q/h=0.05: (-0.52,+0.53) width 1.06  Q/h=0.1: (-0.52,+0.53) width 1.06  Q/h=0.2: (+0.00,+0.53) width 0.53  Q/h=0.25: (+0.00,+0.53) width 0.53
+  R=0.25 2D FCL: Q/h=0.025: (-0.43,+0.00) width 0.43  Q/h=0.05: (-0.43,+0.00) width 0.43  Q/h=0.1: (-0.43,+0.00) width 0.43  Q/h=0.2: (-0.44,+0.00) width 0.44  Q/h=0.25: (-0.45,+0.00) width 0.45
+  R=0.25 2D HEX: Q/h=0.025: (-0.52,+0.52) width 1.05  Q/h=0.05: (-0.52,+0.52) width 1.05  Q/h=0.1: (-0.52,+0.52) width 1.05  Q/h=0.2: (-0.52,+0.52) width 1.05  Q/h=0.25: (-0.52,+0.52) width 1.05
+
+== velocity reachable inside the stable window vs extremes over theta, R = Q/2
+  3D BCL Q/h=0.2: stable-window B_perp/h in [-5.564e-04, -5.564e-04]  mean over theta -5.564e-04  largest |B| -5.564e-04
+  3D BCL Q/h=0.25: stable-window B_perp/h in [-1.063e-03, -1.063e-03]  mean over theta -1.063e-03  largest |B| -1.063e-03
+  3D FCL Q/h=0.2: stable-window B_perp/h in [-3.353e-04, -8.733e-05]  mean over theta -7.622e-04  largest |B| -1.442e-03
+  3D FCL Q/h=0.25: stable-window B_perp/h in [-7.269e-04, -3.144e-04]  mean over theta -1.452e-03  largest |B| -2.611e-03
+  3D HEX Q/h=0.2: stable-window B_perp/h in [-5.419e-04, -5.419e-04]  mean over theta -5.419e-04  largest |B| -5.419e-04
+  3D HEX Q/h=0.25: stable-window B_perp/h in [-1.039e-03, -1.039e-03]  mean over theta -1.039e-03  largest |B| -1.039e-03
+  2D BCL Q/h=0.2: stable-window B_perp/h in [-9.782e-04, -5.185e-04]  mean over theta -7.504e-04  largest |B| -9.820e-04
+  2D BCL Q/h=0.25: stable-window B_perp/h in [-1.251e-03, -1.038e-03]  mean over theta -1.465e-03  largest |B| -1.891e-03
+  2D FCL Q/h=0.2: stable-window B_perp/h in [-1.899e-03, -1.653e-03]  mean over theta -1.240e-03  largest |B| -1.899e-03
+  2D FCL Q/h=0.25: stable-window B_perp/h in [-3.761e-03, -3.261e-03]  mean over theta -2.430e-03  largest |B| -3.761e-03
+  2D HEX Q/h=0.2: stable-window B_perp/h in [-4.496e-04, -4.496e-04]  mean over theta -4.496e-04  largest |B| -4.496e-04
+  2D HEX Q/h=0.25: stable-window B_perp/h in [-8.681e-04, -8.681e-04]  mean over theta -8.681e-04  largest |B| -8.681e-04
+
+== minima of A_perp/h (Fig. 7 and S6)
+  R=0.5 2D HEX: Q/h=0.1: ccw -2.00e-05 cw -2.00e-05  Q/h=0.2: ccw -6.22e-04 cw -6.22e-04  Q/h=0.25: ccw -1.85e-03 cw -1.85e-03
+  R=0.5 3D HEX: Q/h=0.1: ccw -2.07e-05 cw -2.07e-05  Q/h=0.2: ccw -6.41e-04 cw -6.41e-04  Q/h=0.25: ccw -1.91e-03 cw -1.91e-03
+  R=0.5 3D BCL: Q/h=0.1: ccw -3.28e-05 cw -3.28e-05  Q/h=0.2: ccw -9.35e-04 cw -9.35e-04  Q/h=0.25: ccw -2.60e-03 cw -2.60e-03
+  R=0.5 2D BCL: Q/h=0.1: ccw -2.22e-05 cw -1.98e-05  Q/h=0.2: ccw -6.46e-04 cw -5.68e-04  Q/h=0.25: ccw -1.82e-03 cw -1.58e-03
+  R=0.5 3D FCL: Q/h=0.1: ccw -1.07e-04 cw -6.31e-05  Q/h=0.2: ccw -2.85e-03 cw -1.66e-03  Q/h=0.25: ccw -7.51e-03 cw -4.31e-03
+  R=0.5 2D FCL: Q/h=0.1: ccw -8.06e-05 cw -4.48e-05  Q/h=0.2: ccw -2.24e-03 cw -1.23e-03  Q/h=0.25: ccw -6.10e-03 cw -3.33e-03
+  R=0.25 2D HEX: Q/h=0.1: ccw -5.02e-06 cw -5.02e-06  Q/h=0.2: ccw -1.58e-04 cw -1.58e-04  Q/h=0.25: ccw -4.75e-04 cw -4.75e-04
+  R=0.25 3D HEX: Q/h=0.1: ccw -5.19e-06 cw -5.19e-06  Q/h=0.2: ccw -1.63e-04 cw -1.63e-04  Q/h=0.25: ccw -4.89e-04 cw -4.89e-04
+  R=0.25 3D BCL: Q/h=0.1: ccw -8.30e-06 cw -8.30e-06  Q/h=0.2: ccw -2.48e-04 cw -2.48e-04  Q/h=0.25: ccw -7.16e-04 cw -7.16e-04
+  R=0.25 2D BCL: Q/h=0.1: ccw -5.57e-06 cw -5.09e-06  Q/h=0.2: ccw -1.66e-04 cw -1.57e-04  Q/h=0.25: ccw -4.80e-04 cw -4.65e-04
+  R=0.25 3D FCL: Q/h=0.1: ccw -2.64e-05 cw -1.65e-05  Q/h=0.2: ccw -6.85e-04 cw -4.99e-04  Q/h=0.25: ccw -1.76e-03 cw -1.46e-03
+  R=0.25 2D FCL: Q/h=0.1: ccw -1.98e-05 cw -1.17e-05  Q/h=0.2: ccw -5.27e-04 cw -3.66e-04  Q/h=0.25: ccw -1.39e-03 cw -1.09e-03
+
+== growth of the mean |A_perp|/h with Q/h, R = Q/2 (ratio Q/h = 0.25 vs 0.125)
+  3D BCL: ratio 26.5 (slope in log-log 4.7), monotonic: True
+  3D FCL: ratio 24.0 (slope in log-log 4.6), monotonic: True
+  3D HEX: ratio 30.4 (slope in log-log 4.9), monotonic: True
+  2D BCL: ratio 26.7 (slope in log-log 4.7), monotonic: True
+  2D FCL: ratio 25.8 (slope in log-log 4.7), monotonic: True
+  2D HEX: ratio 30.5 (slope in log-log 4.9), monotonic: True

@@ -107,7 +107,9 @@ def velocity_figures(geo, R, lats, sub, suffix):
     axR.set_xlim(-np.pi - 0.1, np.pi + 0.1)
     axR.set_xticks(np.arange(-3, 4))
     axR.axhline(1, color=MUTED, lw=0.4)
-    axR.legend(loc="best", ncol=2 if len(lats) > 2 else 1)
+    # above the axes: the points fill the whole panel, so any legend inside covers data
+    axR.legend(loc="lower center", bbox_to_anchor=(0.5, 1.0), ncol=len(lats), columnspacing=1.0,
+               borderaxespad=0.2)
     save(figL, sub, f"CM_av_all_{tag}{suffix}")
     save(figR, sub, f"CM_vs_ang_all_{tag}{suffix}")
 

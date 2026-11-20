@@ -21,6 +21,7 @@ import sys
 import time
 
 import numpy as np
+from matplotlib.ticker import NullFormatter
 
 sys.path.insert(0, os.path.dirname(__file__))
 from paper_figures import COLOR, MARK, NAME, LATS, INK, MUTED, plt, save  # noqa: E402  (shared style)
@@ -69,6 +70,12 @@ def series(field, th, R):
 
 
 # ------------------------------------------------------------------------------------------------
+def log_xticks(ax, ticks):
+    """Explicit major ticks on a log x axis and no minor labels (the default ones overlap)."""
+    ax.set_xticks(ticks, [f"${t:g}$" for t in ticks])
+    ax.xaxis.set_minor_formatter(NullFormatter())
+
+
 def conv_ewald():
     rows = []
     cuts = np.arange(2, 42, 2)
@@ -189,6 +196,7 @@ def conv_images():
         ax.set_title("3D lattices" if geo == "bulk3d" else "monolayers", color=INK)
         ax.legend(fontsize=6.5, loc="lower left")
         if geo == "bulk3d":
+            log_xticks(ax, (2, 4, 8, 16, 32))
             ax.axvline(24, color=MUTED, lw=0.6, ls="--")
             ax.text(24.8, 3e-3, "production", color=MUTED, fontsize=7, rotation=90, va="bottom")
         else:
@@ -257,6 +265,7 @@ def conv_ball():
             for n, v in zip(ns, vals):
                 rows.append({"geometry": geo, "lattice": lat, "n": n, "B_fourier": v, "B_mean_value": B})
             log(f"conv_ball {geo} {lat}")
+        log_xticks(ax, (4, 8, 16, 32))
         ax.set_xlabel(r"wave vectors with $|m_i|\leq n$")
         ax.set_title("3D lattices" if geo == "bulk3d" else "monolayers", color=INK)
     axs[0].set_ylabel(r"$|B_\perp^{\rm Fourier}-B_\perp|/|B_\perp|$")
