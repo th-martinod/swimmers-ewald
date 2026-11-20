@@ -1,91 +1,92 @@
-"""Geometry of one antiparallel spinner pair (Eq. 1 of the paper) and the observables.
+"""One antiparallel spinner pair (Eq. 1 of the paper) and the observables of the article.
 
-Conventions (see docs/CONVENTIONS.md):
-- n = z. Q = Q (cos th, sin th, 0). e_perp = Qhat x n. The CCW spinner sits at r1 = -Q/2,
-  the CW spinner at r2 = +Q/2 (paper: Q = r2 - r1, r_c = 0).
-- Eq. (1) lists point forces s_P * Qhat at P = +-Q/2 +- R e_perp. With Eq. (2) written as
-  mu lap v = grad p + F, the force ON THE FLUID is -F, which is the one that spins r1 CCW.
-  FLUID_SIGN = -1 implements that (it is also what base_sums.rkt does).
-- Rotation rate of a velocity W:  rate(W) = (Qhat x W) . n   (> 0 counterclockwise).
-- Paper criterion: A_perp = sign(theta) * rate(W) (base_sums.rkt normalizes a1 x Q, hence sign);
-  A_perp < 0 pushes Q back towards a1 (stabilizing).
+Conventions (docs/CONVENTIONS.md, Figure 1 of the article):
+- n = z, Qhat = (cos th, sin th, 0), e = Qhat x n. The counterclockwise spinner is at r1 = -Q/2 and the
+  clockwise spinner at r2 = +Q/2 (Q = r2 - r1, pair centre r_c = 0).
+- Eq. (1) gives the force density F that the fluid exerts on the spinners: s_P zeta V^S Qhat at
+  A = Q/2 + R e (s = +1), B = Q/2 - R e (-1), C = -Q/2 + R e (-1), D = -Q/2 - R e (+1).
+  The spinners exert -F on the fluid (Eq. 2): FLUID_SIGN = -1.
+- Eq. (4): V_conf = [v(A) - v(B)] - [v(C) - v(D)].
+- A_perp = (mu h / zeta V^S) (Qhat x V_conf) . (a1hat x Qhat) = -(mu h / zeta V^S) T sin(theta),
+  with T = V_conf . e. A_perp < 0 pushes Q back towards a1 (stabilizing).
+- B_perp: [V^f]_perp = (zeta V^S / mu) (B_perp / h) e, with V^f the average of the fluid velocity over
+  the ball of radius r_f = d_nn / 2 centred on the pair (SI Section S1).
+Units: mu = 1, zeta V^S = 1, Q = 1, so A_perp/h and B_perp/h are given in units of 1/Q.
 """
 import numpy as np
 
 from .direct import extrapolate
-from .kernels import stokeslet3d_dot, stokeslet2d_dot
+from .kernels import stokeslet_dot
 
 FLUID_SIGN = -1.0
 NZ = np.array([0.0, 0.0, 1.0])
 
 
-def frame(theta, Q=1.0):
+def frame(theta):
     qh = np.array([np.cos(theta), np.sin(theta), 0.0])
-    e = np.cross(qh, NZ)
-    return qh, e
+    return qh, np.cross(qh, NZ)
 
 
-def sources(theta, Q=1.0, R=0.5, fluid_sign=FLUID_SIGN):
-    qh, e = frame(theta, Q)
+def sources(theta, Q=1.0, R=0.5):
+    """Positions of the four point forces (A, B, C, D) and the forces exerted on the fluid."""
+    qh, e = frame(theta)
     pos = np.array([Q / 2 * qh + R * e, Q / 2 * qh - R * e, -Q / 2 * qh + R * e, -Q / 2 * qh - R * e])
     s = np.array([1.0, -1.0, -1.0, 1.0])
-    return pos, fluid_sign * s[:, None] * qh[None, :]
+    return pos, FLUID_SIGN * s[:, None] * qh[None, :]
 
 
 def eval_points(theta, Q=1.0, R=0.5):
-    """[p1, p2, p3, p4, r1, r2] with V_conf = (v(p1)-v(p2)) - (v(p3)-v(p4))  (Eq. 5)."""
-    qh, e = frame(theta, Q)
-    return np.array([Q / 2 * qh - R * e, Q / 2 * qh + R * e, -Q / 2 * qh - R * e, -Q / 2 * qh + R * e,
-                     -Q / 2 * qh, Q / 2 * qh])
+    """[A, B, C, D, r1, r2, r_c]."""
+    P, _ = sources(theta, Q, R)
+    qh, _ = frame(theta)
+    return np.vstack([P, [-Q / 2 * qh, Q / 2 * qh, np.zeros(3)]])
 
 
-def isolated_pair_velocity(theta, Q, R, X, kernel="3d"):
-    """Free-space velocity at X from the pair itself (no images)."""
-    P, F = sources(theta, Q, R)
-    kern = stokeslet3d_dot if kernel == "3d" else stokeslet2d_dot
-    return sum(kern(X - P[s], F[s]) for s in range(4))
+def self_ball_average(P, F, a):
+    """Exact average over the ball |r| < a of the free-space flow of forces F at P (all |P| < a), mu = 1:
+    <G(r - P)> = [(2 a^2 - 4|P|^2/5) I + 2 P P / 5] / (8 pi a^3)."""
+    P, F = np.asarray(P, float), np.asarray(F, float)
+    p2 = np.sum(P * P, axis=1)
+    pf = np.sum(P * F, axis=1)
+    return ((2 * a**2 - 0.8 * p2)[:, None] * F + 0.4 * P * pf[:, None]).sum(0) / (8 * np.pi * a**3)
 
 
-def _scalars(v, qh, e, Q):
-    """Observables from velocities v[..., 6, 3] at eval_points (any leading shape)."""
+def _scalars(v, gp, theta, qh, e, P, F, a):
+    """Observables from the velocities v[..., 7, 3] at eval_points and the image pressure gradient
+    gp[..., 3] at the centre (any leading shape, e.g. one entry per cutoff radius)."""
     Vconf = (v[..., 0, :] - v[..., 1, :]) - (v[..., 2, :] - v[..., 3, :])
-    Qdot = v[..., 5, :] - v[..., 4, :]
-    U = 0.5 * (v[..., 4, :] + v[..., 5, :])
-    rate = lambda W: np.cross(qh, W)[..., 2]
-    return {"rate_conf": rate(Vconf), "omega_qdot": rate(Qdot) / Q, "Vconf_par": Vconf @ qh,
-            "U_perp": U @ e, "U_par": U @ qh}
+    T = Vconf @ e
+    # average over the ball |r| < a: own pair exactly, images by the biharmonic mean-value theorem
+    v_self0 = sum(stokeslet_dot(-P[s], F[s]) for s in range(4))
+    Vf = self_ball_average(P, F, a) + (v[..., 6, :] - v_self0) + a**2 / 10 * gp
+    return {"T": T, "A_perp": -T * np.sin(theta), "B_perp": Vf @ e, "Qdot_perp": (v[..., 5, :] - v[..., 4, :]) @ e}
 
 
-def observables(field, theta, Q=1.0, R=0.5, kernel="3d"):
-    """field(X, P, F) -> (v (E,3), err (E,3)). Returns a dict of scalar observables.
+def observables(field, theta, Q=1.0, R=0.5):
+    """field: a Field from backends.make_field. Returns a dict of scalar observables.
 
-    If the field exposes `vs_L` (direct lattice sums), every observable is extrapolated in the cutoff
-    radius on its own, which gives a realistic error (cancellations happen before extrapolating)."""
-    qh, e = frame(theta, Q)
+    For direct lattice sums every observable is extrapolated in the cutoff radius on its own, after
+    the cancellations, which gives a realistic error estimate."""
+    qh, e = frame(theta)
     P, F = sources(theta, Q, R)
     X = eval_points(theta, Q, R)
-    if hasattr(field, "vs_L"):
-        series = _scalars(field.vs_L(X, P, F), qh, e, Q)
-        out, errs = {}, {}
+    a = field.d_nn / 2
+    if field.direct:
+        v = field.velocity_vs_L(X, P, F)
+        gp = field.grad_p_vs_L(P, F)
+        series = _scalars(v, gp, theta, qh, e, P, F, a)
+        out, err = {}, {}
         for k, y in series.items():
-            a, err = extrapolate(field.L, y[:, None])
-            out[k], errs[k] = float(a[0]), float(err[0])
+            val, er = extrapolate(field.L, y[:, None])
+            out[k], err[k] = float(val[0]), float(er[0])
     else:
-        v, _ = field(X, P, F)
-        out = {k: float(val) for k, val in _scalars(v, qh, e, Q).items()}
-        errs = {k: 0.0 for k in out}
-    v0 = isolated_pair_velocity(theta, Q, R, X[4:], kernel)
-    sg = float(np.sign(round(theta, 14)))
-    return {
-        "rate_conf": out["rate_conf"],          # (Qhat x V_conf).n   [velocity units, as in the paper]
-        "omega_qdot": out["omega_qdot"],        # angular velocity of Q from Qdot = v(r2) - v(r1)
-        "A_conf": sg * out["rate_conf"],        # paper's A_perp/h (V_conf criterion), <0 = stabilizing
-        "A_qdot": sg * out["omega_qdot"] * Q,   # same sign convention with Qdot instead of V_conf
-        "Vconf_par": out["Vconf_par"],
-        "U_perp": out["U_perp"],                # translation of the pair centre along Qhat x n
-        "U_par": out["U_par"],
-        "U_perp_isolated": float(np.dot(0.5 * (v0[0] + v0[1]), e)),
-        "err_conf": errs["rate_conf"],
-        "err_qdot": errs["omega_qdot"],
-        "err_U": errs["U_perp"],
-    }
+        # Ewald velocities. The image sum of grad p decays as d^-5 (absolutely convergent, tail ~ L^-2 with
+        # shell-to-shell fluctuations), so the largest cutoff is used as it is and the change from the previous
+        # cutoff is the error estimate (no 1/L extrapolation, see scripts/convergence.py, conv_images)
+        v = field.velocity(X, P, F)
+        gps = field.grad_p_vs_L(P, F)
+        series = _scalars(np.broadcast_to(v, (len(gps),) + v.shape), gps, theta, qh, e, P, F, a)
+        out = {k: float(y[-1]) for k, y in series.items()}
+        err = {k: float(abs(y[-1] - y[-2])) for k, y in series.items()}
+    return {"T": out["T"], "A_perp": out["A_perp"], "B_perp": out["B_perp"], "Qdot_perp": out["Qdot_perp"],
+            "err_A": err["A_perp"], "err_B": err["B_perp"]}
