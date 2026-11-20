@@ -1,10 +1,9 @@
-"""Free-space Green's functions applied to a force: S(r).f (mu = 1)."""
+"""Free-space Stokeslet (mu = 1) applied to a force f exerted on the fluid at the origin."""
 import numpy as np
 
 
-def stokeslet3d_dot(D: np.ndarray, f: np.ndarray) -> np.ndarray:
-    """Oseen tensor (I/r + rr/r^3)/(8 pi) applied to f. D: (...,3), f: (3,) or (...,3).
-    Coincident points (|D| = 0) give 0 (their in-plane contribution is along f only)."""
+def stokeslet_dot(D: np.ndarray, f: np.ndarray) -> np.ndarray:
+    """Velocity (I/r + rr/r^3)/(8 pi) . f at D (...,3). Coincident points (|D| = 0) give 0."""
     r = np.linalg.norm(D, axis=-1)
     with np.errstate(divide="ignore", invalid="ignore"):
         rf = np.sum(D * f, axis=-1)
@@ -13,18 +12,12 @@ def stokeslet3d_dot(D: np.ndarray, f: np.ndarray) -> np.ndarray:
     return out
 
 
-def stokeslet2d_dot(D: np.ndarray, f: np.ndarray) -> np.ndarray:
-    """2D Stokeslet (-ln r I + rr/r^2)/(4 pi) for line forces (per unit length), in-plane."""
-    D2 = D.copy()
-    D2[..., 2] = 0.0
-    r = np.linalg.norm(D2, axis=-1)
-    f2 = np.array(f, dtype=float, copy=True)
-    f2[..., 2] = 0.0
+def pressure_gradient_dot(D: np.ndarray, f: np.ndarray) -> np.ndarray:
+    """Gradient of the Stokeslet pressure p = (D.f)/(4 pi r^3):  [f/r^3 - 3 (D.f) D/r^5]/(4 pi).
+    Away from the force, lap(v) = grad(p)/mu."""
+    r = np.linalg.norm(D, axis=-1)
     with np.errstate(divide="ignore", invalid="ignore"):
-        rf = np.sum(D2 * f2, axis=-1)
-        out = (-np.log(r)[..., None] * f2 + D2 * (rf / r**2)[..., None]) / (4 * np.pi)
+        rf = np.sum(D * f, axis=-1)
+        out = (f / r[..., None] ** 3 - 3 * D * (rf / r**5)[..., None]) / (4 * np.pi)
     out[r < 1e-12] = 0.0
     return out
-
-
-KERNELS = {"3d": stokeslet3d_dot, "2d": stokeslet2d_dot}

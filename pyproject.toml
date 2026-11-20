@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "swimmers-ewald"
-version = "0.1.0"
-description = "Hydrodynamic lattice sums for clusters of antiparallel spinner pairs (corrected re-implementation)"
+version = "0.2.0"
+description = "Hydrodynamic lattice sums for clusters of antiparallel spinner pairs (approved conventions of the revised article)"
 requires-python = ">=3.10"
 dependencies = ["numpy>=1.24", "scipy>=1.10", "matplotlib>=3.7", "tomli>=2; python_version < '3.11'"]
 

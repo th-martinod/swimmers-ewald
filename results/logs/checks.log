@@ -1,0 +1,90 @@
+PASS  1 files scl_bulk3d_R0.5.csv: rows = 2415 (expected 2415), non-finite = 0
+PASS  1 files scl_bulk3d_R0.25.csv: rows = 2415 (expected 2415), non-finite = 0
+PASS  1 files scl_monolayer_R0.5.csv: rows = 2415 (expected 2415), non-finite = 0
+PASS  1 files scl_monolayer_R0.25.csv: rows = 2415 (expected 2415), non-finite = 0
+PASS  1 files bcl_bulk3d_R0.5.csv: rows = 2415 (expected 2415), non-finite = 0
+PASS  1 files bcl_bulk3d_R0.25.csv: rows = 2415 (expected 2415), non-finite = 0
+PASS  1 files bcl_monolayer_R0.5.csv: rows = 2415 (expected 2415), non-finite = 0
+PASS  1 files bcl_monolayer_R0.25.csv: rows = 2415 (expected 2415), non-finite = 0
+PASS  1 files fcl_bulk3d_R0.5.csv: rows = 2415 (expected 2415), non-finite = 0
+PASS  1 files fcl_bulk3d_R0.25.csv: rows = 2415 (expected 2415), non-finite = 0
+PASS  1 files fcl_monolayer_R0.5.csv: rows = 2415 (expected 2415), non-finite = 0
+PASS  1 files fcl_monolayer_R0.25.csv: rows = 2415 (expected 2415), non-finite = 0
+PASS  1 files hex_bulk3d_R0.5.csv: rows = 2415 (expected 2415), non-finite = 0
+PASS  1 files hex_bulk3d_R0.25.csv: rows = 2415 (expected 2415), non-finite = 0
+PASS  1 files hex_monolayer_R0.5.csv: rows = 2415 (expected 2415), non-finite = 0
+PASS  1 files hex_monolayer_R0.25.csv: rows = 2415 (expected 2415), non-finite = 0
+INFO  1 files count: 16 of 16 CSV present
+PASS  2 theta = 0: max|A_perp| = 0.000e+00 (min rows with theta = 0 per file: 15)
+PASS  3 SCL bulk3d R=0.5 exact cancellation: max|A_perp| = 4.111e-16 (< 1e-13)
+PASS  3 SCL bulk3d R=0.25 non-zero: max|A_perp| = 1.610e-04 (> 1e-10)
+PASS  3 SCL monolayer R=0.5 exact cancellation: max|A_perp| = 6.474e-15 (< 1e-13)
+PASS  3 SCL monolayer R=0.25 non-zero: max|A_perp| = 1.595e-04 (> 1e-10)
+PASS  4 HEX bulk3d R=0.5 A<0 on 0.02<|th|<0.50: max A_perp = -4.036e-10 over 900 rows
+PASS  4 HEX bulk3d R=0.5 A>0 on 0.55<|th|<pi/4: min A_perp = 9.139e-09 over 450 rows
+PASS  4 HEX bulk3d R=0.5 A even in theta: max_h max|A(th)-A(-th)|/max|A| = 5.081e-10 (<= 1e-6)
+PASS  4 HEX bulk3d R=0.5 B independent of theta: max_h (max-min)/|mean| of B_perp = 4.693e-06 (< 1e-3)
+PASS  4 HEX bulk3d R=0.25 A<0 on 0.02<|th|<0.50: max A_perp = -1.009e-10 over 900 rows
+PASS  4 HEX bulk3d R=0.25 A>0 on 0.55<|th|<pi/4: min A_perp = 2.285e-09 over 450 rows
+PASS  4 HEX bulk3d R=0.25 A even in theta: max_h max|A(th)-A(-th)|/max|A| = 1.840e-09 (<= 1e-6)
+FAIL  4 HEX bulk3d R=0.25 B independent of theta: max_h (max-min)/|mean| of B_perp = 1.713e-01 (< 1e-3)
+PASS  4 HEX monolayer R=0.5 A<0 on 0.02<|th|<0.50: max A_perp = -3.902e-10 over 900 rows
+PASS  4 HEX monolayer R=0.5 A>0 on 0.55<|th|<pi/4: min A_perp = 8.835e-09 over 450 rows
+PASS  4 HEX monolayer R=0.5 A even in theta: max_h max|A(th)-A(-th)|/max|A| = 2.010e-09 (<= 1e-6)
+PASS  4 HEX monolayer R=0.5 B independent of theta: max_h (max-min)/|mean| of B_perp = 5.631e-06 (< 1e-3)
+PASS  4 HEX monolayer R=0.25 A<0 on 0.02<|th|<0.50: max A_perp = -9.758e-11 over 900 rows
+PASS  4 HEX monolayer R=0.25 A>0 on 0.55<|th|<pi/4: min A_perp = 2.209e-09 over 450 rows
+PASS  4 HEX monolayer R=0.25 A even in theta: max_h max|A(th)-A(-th)|/max|A| = 1.555e-08 (<= 1e-6)
+FAIL  4 HEX monolayer R=0.25 B independent of theta: max_h (max-min)/|mean| of B_perp = 1.958e-01 (< 1e-3)
+PASS  5 B_perp mean sign scl bulk3d R=0.5: max over h of mean B_perp = -1.3832e-06 (must be < 0), 0 h with >= 0
+PASS  5 B_perp mean sign scl bulk3d R=0.25: max over h of mean B_perp = -6.9169e-07 (must be < 0), 0 h with >= 0
+PASS  5 B_perp mean sign scl monolayer R=0.5: max over h of mean B_perp = -1.1092e-06 (must be < 0), 0 h with >= 0
+PASS  5 B_perp mean sign scl monolayer R=0.25: max over h of mean B_perp = -5.5464e-07 (must be < 0), 0 h with >= 0
+PASS  5 B_perp mean sign bcl bulk3d R=0.5: max over h of mean B_perp = -1.1323e-06 (must be < 0), 0 h with >= 0
+PASS  5 B_perp mean sign bcl bulk3d R=0.25: max over h of mean B_perp = -5.6631e-07 (must be < 0), 0 h with >= 0
+PASS  5 B_perp mean sign bcl monolayer R=0.5: max over h of mean B_perp = -1.4672e-06 (must be < 0), 0 h with >= 0
+PASS  5 B_perp mean sign bcl monolayer R=0.25: max over h of mean B_perp = -7.3361e-07 (must be < 0), 0 h with >= 0
+PASS  5 B_perp mean sign fcl bulk3d R=0.5: max over h of mean B_perp = -1.5700e-06 (must be < 0), 0 h with >= 0
+PASS  5 B_perp mean sign fcl bulk3d R=0.25: max over h of mean B_perp = -7.8529e-07 (must be < 0), 0 h with >= 0
+PASS  5 B_perp mean sign fcl monolayer R=0.5: max over h of mean B_perp = -2.4131e-06 (must be < 0), 0 h with >= 0
+PASS  5 B_perp mean sign fcl monolayer R=0.25: max over h of mean B_perp = -1.2065e-06 (must be < 0), 0 h with >= 0
+PASS  5 B_perp mean sign hex bulk3d R=0.5: max over h of mean B_perp = -1.0922e-06 (must be < 0), 0 h with >= 0
+PASS  5 B_perp mean sign hex bulk3d R=0.25: max over h of mean B_perp = -5.4620e-07 (must be < 0), 0 h with >= 0
+PASS  5 B_perp mean sign hex monolayer R=0.5: max over h of mean B_perp = -8.9521e-07 (must be < 0), 0 h with >= 0
+PASS  5 B_perp mean sign hex monolayer R=0.25: max over h of mean B_perp = -4.4765e-07 (must be < 0), 0 h with >= 0
+PASS  6 point bulk3d scl B_perp: -3.0233e-04 vs -3.0230e-04, rel. err 1.03e-04
+PASS  6 point bulk3d scl A_perp: -2.254e-17 vs ~0 (< 1e-13)
+PASS  6 point bulk3d bcl B_perp: -5.5638e-04 vs -5.5630e-04, rel. err 1.47e-04
+PASS  6 point bulk3d bcl A_perp: -9.0441e-04 vs -9.0440e-04, rel. err 6.31e-06
+PASS  6 point bulk3d fcl B_perp: -9.6624e-04 vs -9.6610e-04, rel. err 1.48e-04
+PASS  6 point bulk3d fcl A_perp: -2.1324e-03 vs -2.1320e-03, rel. err 1.82e-04
+PASS  6 point bulk3d hex B_perp: -5.4189e-04 vs -5.4180e-04, rel. err 1.62e-04
+PASS  6 point bulk3d hex A_perp: -6.1987e-04 vs -6.1990e-04, rel. err 5.53e-05
+PASS  6 point monolayer scl B_perp: -2.0989e-04 vs -2.0990e-04, rel. err 5.86e-05
+PASS  6 point monolayer scl A_perp: -2.182e-17 vs ~0 (< 1e-13)
+PASS  6 point monolayer bcl B_perp: -5.2025e-04 vs -5.2030e-04, rel. err 9.50e-05
+PASS  6 point monolayer bcl A_perp: -6.1998e-04 vs -6.2000e-04, rel. err 3.72e-05
+PASS  6 point monolayer fcl B_perp: -1.0390e-03 vs -1.0390e-03, rel. err 1.29e-05
+PASS  6 point monolayer fcl A_perp: -1.7033e-03 vs -1.7030e-03, rel. err 1.48e-04
+PASS  6 point monolayer hex B_perp: -4.4963e-04 vs -4.4960e-04, rel. err 5.64e-05
+PASS  6 point monolayer hex A_perp: -6.0166e-04 vs -6.0170e-04, rel. err 5.85e-05
+PASS  7 six-fold amplitude monolayer: T/(126 K sin 6th) = 0.9267 vs 0.927
+PASS  7 six-fold amplitude bulk3d: T/(126 K sin 6th) = 0.9547 vs 0.955
+FAIL  8 err_B scl bulk3d R=0.5: max err_B/|B_perp| = 1.013e-02 (< 1e-4)
+FAIL  8 err_B scl bulk3d R=0.25: max err_B/|B_perp| = 5.414e-03 (< 1e-4)
+INFO  8 err_B scl monolayer R=0.5: max err_B/|B_perp| = 4.123e+00 (report only)
+INFO  8 err_B scl monolayer R=0.25: max err_B/|B_perp| = 2.369e-01 (report only)
+PASS  8 err_B bcl bulk3d R=0.5: max err_B/|B_perp| = 1.815e-06 (< 1e-4)
+PASS  8 err_B bcl bulk3d R=0.25: max err_B/|B_perp| = 2.056e-06 (< 1e-4)
+INFO  8 err_B bcl monolayer R=0.5: max err_B/|B_perp| = 7.458e-03 (report only)
+INFO  8 err_B bcl monolayer R=0.25: max err_B/|B_perp| = 7.681e-03 (report only)
+FAIL  8 err_B fcl bulk3d R=0.5: max err_B/|B_perp| = 3.870e-02 (< 1e-4)
+FAIL  8 err_B fcl bulk3d R=0.25: max err_B/|B_perp| = 1.364e-01 (< 1e-4)
+INFO  8 err_B fcl monolayer R=0.5: max err_B/|B_perp| = 2.667e-02 (report only)
+INFO  8 err_B fcl monolayer R=0.25: max err_B/|B_perp| = 3.478e-02 (report only)
+PASS  8 err_B hex bulk3d R=0.5: max err_B/|B_perp| = 1.591e-06 (< 1e-4)
+PASS  8 err_B hex bulk3d R=0.25: max err_B/|B_perp| = 1.710e-06 (< 1e-4)
+INFO  8 err_B hex monolayer R=0.5: max err_B/|B_perp| = 5.680e-03 (report only)
+INFO  8 err_B hex monolayer R=0.25: max err_B/|B_perp| = 6.228e-03 (report only)
+
+TOTAL: 73 PASS, 6 FAIL, 0 WARN, 9 INFO

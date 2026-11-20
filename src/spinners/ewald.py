@@ -1,9 +1,9 @@
-"""Triply periodic Stokeslet via the Hasimoto/Beenakker Ewald split.
+"""Triply periodic Stokeslet via the Ewald split of Hasimoto (1959).
 
 G_per(x) = 1/(4 pi^2 V0) sum_{k!=0} phi(k) (I - kk/k^2)/k^2 cos(2 pi k.x)
           + c sum_n A_xi(x - r_n),     phi = (1 + pi xi k^2) exp(-pi xi k^2),  c = -1/(4 pi)
 
-with A_xi the real-space kernel of base_sums.rkt (matA). The coefficient c was derived from
+with A_xi the real-space kernel Phi of the SI (eq. S22). The coefficient c was derived from
 the short-distance limit (A_xi -> -(I/r + rr/r^3)/2) and is verified by xi-independence
 (tests/test_ewald.py). Velocities are relative to the volume-mean fluid velocity (k = 0 excluded).
 """

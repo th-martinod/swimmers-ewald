@@ -1,9 +1,11 @@
-# Every result of the article and SI, corrected.
-# theta_ranges: [theta_max, n] symmetric grids. [-pi/4, pi/4] with 101 points for the stability maps
-# (same resolution as run_sums.rkt) and [-pi, pi] with 81 points for the theta dependence of the velocity.
+# Every data figure of the article and its SI.
+# theta_ranges: [theta_max, n] symmetric grids: [-pi/4, pi/4] with 101 points for the stability maps
+# and [-pi, pi] with 81 points for the theta dependence of the velocity.
+# h: lattice parameter in units of Q, so Q/h = 1/h = 0.025 ... 0.25 (same values as the article).
+# L_over_h: cutoff radii of the direct (monolayer) sums, extrapolated to infinity.
 [sweep]
 lattices = ["scl", "bcl", "fcl", "hex"]
-geometries = ["bulk3d", "monolayer", "pure2d"]
+geometries = ["bulk3d", "monolayer"]
 R = [0.5, 0.25]
 h = [4, 5, 6, 7, 8, 9, 10, 12, 16, 20, 24, 28, 32, 36, 40]
 theta_ranges = [[0.7853981633974483, 101], [3.141592653589793, 81]]

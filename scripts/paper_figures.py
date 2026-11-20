@@ -1,7 +1,13 @@
-"""Corrected versions of every data figure of the article and the SI.
+"""Every data figure of the article and its SI, recomputed with the approved conventions.
 
-Input : results/data_paper/{lattice}_{geometry}_R{R}.csv   (spinners-sweep configs/paper.toml)
-Output: results/figures/paper/*.png  (see docs/FIGURE_MAP.md for the correspondence with the article)
+Input : results/data/{lattice}_{geometry}_R{R}.csv     (spinners-sweep configs/paper.toml)
+Output: results/figures/figs/*.{eps,pdf}    drop-in replacements for the files of the main text
+        results/figures/figs_2/*.{eps,pdf}  drop-in replacements for the files of the SI
+        results/figures/preview/*.png       previews
+docs/FIGURE_MAP.md lists the correspondence with the figures of the manuscript.
+
+The stability maps leave the top of the canvas empty because the manuscript adds the panel letter
+with overpic at (57, 98). No transparency is used (EPS).
 
 Run: python3 scripts/paper_figures.py
 """
@@ -13,21 +19,37 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 
-DATA, OUT = "results/data_paper", "results/figures/paper"
+DATA, OUT = "results/data", "results/figures"
 LATS = ["scl", "bcl", "fcl", "hex"]
 NAME = {"scl": "SCL", "bcl": "BCL", "fcl": "FCL", "hex": "HEX"}
-COLOR = {"scl": "#2a78d6", "bcl": "#eb6834", "fcl": "#1baf7a", "hex": "#eda100"}  # validated, fixed order
+# hues and marker shapes of the original figures (red square, green triangle, blue circle, brown diamond),
+# adjusted to pass the colour-vision-deficiency checks: teal instead of green, ochre instead of brown
+COLOR = {"scl": "#cf2a2a", "bcl": "#109a86", "fcl": "#2a4fd6", "hex": "#b58c00"}
 MARK = {"scl": "s", "bcl": "^", "fcl": "o", "hex": "D"}
-GEO = {"bulk3d": "3D", "monolayer": "monolayer (3D fluid)", "pure2d": "pure 2D (line forces)"}
-STABLE, UNSTABLE, NEUTRAL, INK, MUTED = "#2a78d6", "#e34948", "#f0efec", "#1f1f1e", "#8a8984"
+STABLE, UNSTABLE, INK, MUTED = "#2a5bd7", "#d93a32", "#1f1f1e", "#5f5e5a"
 PI4 = np.pi / 4 + 1e-9
-plt.rcParams.update({"font.size": 10, "axes.spines.top": False, "axes.spines.right": False,
-                     "axes.edgecolor": MUTED, "axes.labelcolor": INK, "xtick.color": MUTED, "ytick.color": MUTED,
-                     "savefig.dpi": 200, "savefig.bbox": "tight", "figure.facecolor": "#fcfcfb",
-                     "axes.facecolor": "#fcfcfb",
-                     # LaTeX look (Computer Modern) without needing a TeX install
-                     "font.family": "serif", "font.serif": ["cmr10"], "mathtext.fontset": "cm",
-                     "axes.formatter.use_mathtext": True, "axes.unicode_minus": False})
+
+plt.rcParams.update({
+    "font.size": 9, "font.family": "serif", "font.serif": ["cmr10"], "mathtext.fontset": "cm",
+    "axes.formatter.use_mathtext": True, "axes.unicode_minus": False,
+    "axes.edgecolor": INK, "axes.linewidth": 0.6, "axes.labelcolor": INK,
+    "xtick.color": INK, "ytick.color": INK, "xtick.direction": "in", "ytick.direction": "in",
+    "xtick.top": True, "ytick.right": True, "xtick.major.width": 0.6, "ytick.major.width": 0.6,
+    "legend.frameon": False, "legend.fontsize": 8, "legend.handletextpad": 0.3,
+    "figure.facecolor": "white", "axes.facecolor": "white", "savefig.facecolor": "white",
+    "ps.fonttype": 42, "pdf.fonttype": 42, "savefig.dpi": 300,
+})
+
+
+def save(fig, sub, name, tight=True):
+    os.makedirs(os.path.join(OUT, sub), exist_ok=True)
+    os.makedirs(os.path.join(OUT, "preview"), exist_ok=True)
+    kw = {"bbox_inches": "tight", "pad_inches": 0.03} if tight else {}
+    for ext in ("eps", "pdf"):
+        fig.savefig(os.path.join(OUT, sub, f"{name}.{ext}"), **kw)
+    fig.savefig(os.path.join(OUT, "preview", f"{sub}__{name}.png"), dpi=150, **kw)
+    plt.close(fig)
+    print(f"  {sub}/{name}")
 
 
 def load(lat, geo, R):
@@ -36,182 +58,163 @@ def load(lat, geo, R):
     return {k: np.array([float(r[k]) for r in rows]) for k in rows[0] if k not in ("geometry", "lattice")}
 
 
-def by_qh(c, key, sel=None):
-    qh = np.unique(c["Q_over_h"])
-    m = np.ones_like(c["theta"], bool) if sel is None else sel
-    return qh, [c[key][m & np.isclose(c["Q_over_h"], q)] for q in qh]
-
-
-def full_circle(c):
-    """Points of the [-pi, pi] grid (81 points) only, so averages are not biased by the denser map grid."""
-    th = np.unique(c["theta"])
-    grid = np.linspace(-np.pi, np.pi, 81)
-    keep = np.isin(np.round(c["theta"], 12), np.round(grid, 12)) | (c["theta"] == 0)
-    keep &= np.abs(c["theta"]) < np.pi - 1e-9  # drop theta = pi (duplicate of -pi)
+def on_grid(c, n, tmax):
+    """Rows of the uniform grid linspace(-tmax, tmax, n), without the duplicate theta = pi."""
+    grid = np.round(np.linspace(-tmax, tmax, n), 12)
+    keep = np.isin(np.round(c["theta"], 12), grid)
+    if tmax == np.pi:
+        keep &= c["theta"] < np.pi - 1e-9
     return keep
 
 
-# ---------------------------------------------------------------- velocities (Figs. 2, 3, S1, S2, S7)
-def velocity_figure(geo, R, fname, title):
-    fig, axs = plt.subplots(1, 3, figsize=(13, 3.6))
+def rows_by_qh(c, key, sel):
+    qh = np.unique(c["Q_over_h"])
+    out = []
+    for q in qh:
+        m = sel & np.isclose(c["Q_over_h"], q)
+        o = np.argsort(c["theta"][m])
+        out.append((c["theta"][m][o], c[key][m][o]))
+    return qh, out
+
+
+def style_sci(ax):
+    ax.ticklabel_format(axis="y", style="sci", scilimits=(-3, 3), useMathText=True)
+
+
+# ------------------------------------------------------------------ velocities (Figs. 2, 3, S1, S2)
+def velocity_figures(geo, R, lats, sub, suffix):
+    tag = "3D" if geo == "bulk3d" else "2D"
+    figL, axL = plt.subplots(figsize=(3.3, 2.75))
+    figR, axR = plt.subplots(figsize=(3.0, 2.75))
+    for lat in lats:
+        c = load(lat, geo, R)
+        qh, rows = rows_by_qh(c, "B_perp", on_grid(c, 81, np.pi))
+        Bbar = np.array([b.mean() for _, b in rows])
+        axL.plot(qh, Bbar, ls="none", marker=MARK[lat], ms=4.5, mfc="white", mec=COLOR[lat], mew=0.9,
+                 label=NAME[lat])
+        for (th, b), bb in zip(rows, Bbar):
+            axR.plot(th, b / bb, ls="none", marker=MARK[lat], ms=2.6, mfc="white", mec=COLOR[lat], mew=0.5)
+        axR.plot([], [], ls="none", marker=MARK[lat], ms=4.5, mfc="white", mec=COLOR[lat], mew=0.9,
+                 label=NAME[lat])
+    axL.axhline(0, color=MUTED, lw=0.4)
+    axL.set_xlabel(r"$Q/h$")
+    axL.set_ylabel(r"$\overline{B}_\perp/h$")
+    axL.set_xlim(0, 0.26)
+    style_sci(axL)
+    axL.legend(loc="best")
+    axR.set_xlabel(r"$\theta$")
+    axR.set_ylabel(r"$B_\perp/\overline{B}_\perp$")
+    axR.set_xlim(-np.pi - 0.1, np.pi + 0.1)
+    axR.set_xticks(np.arange(-3, 4))
+    axR.axhline(1, color=MUTED, lw=0.4)
+    # above the axes: the points fill the whole panel, so any legend inside covers data
+    axR.legend(loc="lower center", bbox_to_anchor=(0.5, 1.0), ncol=len(lats), columnspacing=1.0,
+               borderaxespad=0.2)
+    save(figL, sub, f"CM_av_all_{tag}{suffix}")
+    save(figR, sub, f"CM_vs_ang_all_{tag}{suffix}")
+
+
+# ------------------------------------------------------------------ stability maps (Figs. 4, 5, S4, S5)
+def stability_map(lat, geo, R, sub, suffix):
+    tag = "3D" if geo == "bulk3d" else "2D"
+    c = load(lat, geo, R)
+    sel = on_grid(c, 101, np.pi / 4) & (np.abs(c["theta"]) > 1e-12)   # theta = 0 is the trivial zero
+    qh = np.unique(c["Q_over_h"])
+    th = np.unique(c["theta"][sel])
+    Z = np.empty((len(qh), len(th)))
+    for i, q in enumerate(qh):
+        m = sel & np.isclose(c["Q_over_h"], q)
+        o = np.argsort(c["theta"][m])
+        Z[i] = c["A_perp"][m][o]
+    fig = plt.figure(figsize=(3.3, 3.2))
+    ax = fig.add_axes([0.2, 0.14, 0.75, 0.76])      # top 8 % free for the overpic panel letter
+    big = np.abs(Z).max() * 10
+    ax.contourf(th, qh, Z, levels=[-big, 0, big], colors=[STABLE, UNSTABLE])
+    ax.contour(th, qh, Z, levels=[0], colors=INK, linewidths=0.6)
+    ax.set_xlim(-np.pi / 4, np.pi / 4)
+    ax.set_ylim(qh.min(), qh.max())
+    ax.set_xticks([-0.5, 0, 0.5])
+    ax.set_xlabel(r"$\theta$")
+    ax.set_ylabel(r"$Q/h$")
+    for s in ax.spines.values():
+        s.set_zorder(5)
+    save(fig, sub, f"stability_{NAME[lat]}_{tag}{suffix}", tight=False)
+
+
+# ------------------------------------------------------------------ minima of A_perp (Figs. 7, S6)
+def minima(c, side):
+    """min over theta > 0 (counterclockwise, side = +1) or theta < 0 (clockwise, side = -1) of A_perp,
+    refined with a parabola through the grid minimum. NaN when there is no stable orientation."""
+    sel = on_grid(c, 101, np.pi / 4) & (side * c["theta"] > 1e-12)
+    qh, rows = rows_by_qh(c, "A_perp", sel)
+    out = []
+    for th, a in rows:
+        j = int(np.argmin(a))
+        v = a[j]
+        if 0 < j < len(a) - 1:
+            y0, y1, y2 = a[j - 1], a[j], a[j + 1]
+            den = y0 - 2 * y1 + y2
+            if den > 0:
+                v = y1 - (y2 - y0) ** 2 / (8 * den)
+        out.append(v if v < 0 else np.nan)
+    return qh, np.array(out)
+
+
+MIN_SERIES = [("hex", "monolayer", "HEX 2D", "#cf2a2a", "s"), ("hex", "bulk3d", "HEX 3D", "#2a4fd6", "o"),
+              ("bcl", "bulk3d", "BCL 3D", "#109a86", "^")]
+
+
+def minima_figure(R, sub, suffix, size):
+    fig, ax = plt.subplots(figsize=size)
+    for lat, geo, lab, col, mk in MIN_SERIES:
+        c = load(lat, geo, R)
+        for side, word, face, ms in ((+1, "counterclockwise", col, 5.5), (-1, "clockwise", "white", 4.0)):
+            qh, m = minima(c, side)
+            ax.plot(qh, m, ls="none", marker=mk, ms=ms, mfc=face, mec=col, mew=0.9, label=f"{lab} {word}")
+    ax.axhline(0, color=MUTED, lw=0.4)
+    ax.set_xlabel(r"$Q/h$")
+    ax.set_ylabel(r"$\min A_\perp/h$")
+    ax.set_xlim(0, 0.26)
+    style_sci(ax)
+    ax.legend(loc="lower left")
+    save(fig, sub, f"conf_min_all{suffix}")
+
+
+# ------------------------------------------------------------------ magnitude of A_perp (Fig. S3)
+def magnitude_figure(geo, R=0.5):
+    tag = "3D" if geo == "bulk3d" else "2D"
+    fig, ax = plt.subplots(figsize=(3.2, 2.75))
     for lat in LATS:
         c = load(lat, geo, R)
-        circ = full_circle(c)
-        qh, U = by_qh(c, "U_perp", circ)
-        Ubar = np.array([u.mean() for u in U])
-        U0 = c["U_perp_isolated"][0]
-        kw = dict(color=COLOR[lat], marker=MARK[lat], ms=5, lw=1.4, mfc="none", label=NAME[lat])
-        axs[0].plot(qh, Ubar, **kw)
-        axs[1].plot(qh, 100 * (Ubar - U0) / abs(U0), **kw)
-        for q, u in zip(qh, U):
-            th = c["theta"][circ & np.isclose(c["Q_over_h"], q)]
-            o = np.argsort(th)
-            axs[2].plot(th[o], u[o] / u.mean(), color=COLOR[lat], lw=0.8, alpha=0.35 + 0.65 * q / qh.max())
-    axs[0].axhline(U0, color=MUTED, lw=0.8, ls="--")
-    axs[0].annotate("isolated pair", (0.03, U0), xytext=(0, -12), textcoords="offset points", color=MUTED, fontsize=8)
-    axs[0].set_ylabel(r"$\bar U_\perp$  [$\zeta V^S/(\mu Q)$]")
-    axs[1].set_ylabel(r"lattice correction  $100(\bar U_\perp-U_{iso})/|U_{iso}|$  (%)")
-    axs[2].set_ylabel(r"$U_\perp/\bar U_\perp$")
-    axs[0].set_xlabel(r"$Q/h$"); axs[1].set_xlabel(r"$Q/h$"); axs[2].set_xlabel(r"$\theta$ (rad)")
-    axs[2].set_xlim(-np.pi, np.pi)
-    axs[0].legend(frameon=False, fontsize=8)
-    for lat in LATS:
-        axs[2].plot([], [], color=COLOR[lat], lw=1.5, label=NAME[lat])
-    axs[2].legend(frameon=False, fontsize=8, ncol=2)
-    axs[2].set_title(r"all $Q/h$ superimposed (darker = larger $Q/h$)", fontsize=8, color=MUTED)
-    fig.suptitle(title, color=INK, fontsize=10, y=1.02)
-    fig.savefig(os.path.join(OUT, fname))
-    plt.close(fig)
+        qh, rows = rows_by_qh(c, "A_perp", on_grid(c, 101, np.pi / 4))
+        m = np.array([np.mean(np.abs(a)) for _, a in rows])
+        m = np.maximum(m, 1e-22)                          # exact zeros of the SCL cancellation
+        ax.semilogy(qh, m, ls="none", marker=MARK[lat], ms=4.5, mfc="white", mec=COLOR[lat], mew=0.9,
+                    label=NAME[lat])
+    ax.set_xlabel(r"$Q/h$")
+    ax.set_ylabel(r"$\overline{|A_\perp|}/h$")
+    ax.set_xlim(0, 0.26)
+    ax.legend(loc="center right")
+    save(fig, "figs_2", f"magstability_{tag}")
 
 
-# ---------------------------------------------------------------- stability maps (Figs. 4, 5, S4, S5, S8, S9)
-def stability_figure(geo, R, lats, fname, title):
-    fig, axs = plt.subplots(1, len(lats), figsize=(3.6 * len(lats) + 0.6, 3.6), sharey=True, squeeze=False)
-    axs = axs[0]
-    for ax, lat, letter in zip(axs, lats, "ABCD"):
-        c = load(lat, geo, R)
-        m = np.abs(c["theta"]) <= PI4
-        th = np.unique(c["theta"][m]); qh = np.unique(c["Q_over_h"])
-        Z = np.full((len(qh), len(th)), np.nan)
-        Z[np.searchsorted(qh, c["Q_over_h"][m]), np.searchsorted(th, c["theta"][m])] = c["A_conf"][m]
-        scale = np.nanmax(np.abs(Z), axis=1, keepdims=True)
-        rel = Z / np.where(scale > 0, scale, 1)
-        zero = scale[:, 0] < 1e-10  # identically zero rows (SCL with R = Q/2)
-        col = np.where(rel < -1e-6, -1, np.where(rel > 1e-6, 1, 0)).astype(float)
-        col[zero] = 0
-        ax.pcolormesh(th, qh, col, cmap=matplotlib.colors.ListedColormap([STABLE, NEUTRAL, UNSTABLE]),
-                      vmin=-1.5, vmax=1.5, shading="nearest")
-        if not zero.all():
-            ax.contour(th, qh, np.where(zero[:, None], np.nan, rel), levels=np.linspace(-0.9, 0.9, 7),
-                       colors=INK, linewidths=0.4, alpha=0.6)
-        ax.set_title(f"{letter}) {NAME[lat]}", color=INK, fontsize=10, loc="left")
-        ax.set_xlabel(r"$\theta$ (rad)")
-        if zero.all():
-            ax.text(0, qh.mean(), r"$A_\perp \equiv 0$" + "\n(neutral)", ha="center", va="center", color=INK)
-    axs[0].set_ylabel(r"$Q/h$")
-    h1 = matplotlib.patches.Patch(color=STABLE, label=r"$A_\perp<0$: pushes Q back towards $a^{(1)}$")
-    h2 = matplotlib.patches.Patch(color=UNSTABLE, label=r"$A_\perp>0$: pushes Q away from $a^{(1)}$")
-    fig.legend(handles=[h1, h2], loc="upper center", ncol=2, frameon=False, bbox_to_anchor=(0.5, 1.1))
-    fig.suptitle(title + ".  Lines: level sets of $A_\\perp$ normalized at each $Q/h$.", color=MUTED,
-                 fontsize=8, y=-0.04)
-    fig.savefig(os.path.join(OUT, fname))
-    plt.close(fig)
-
-
-# ---------------------------------------------------------------- minima of A_perp (Figs. 7, S6, S10)
-def minima_figure(R, fname, title, geos=("bulk3d", "monolayer")):
-    """Same definition as the notebook of the article: min of A_perp over theta in (0, pi/4]
-    (counterclockwise) and over [-pi/4, 0) (clockwise), times nothing else (A_perp/h already)."""
-    fig, axs = plt.subplots(1, len(geos), figsize=(5.4 * len(geos), 3.8), sharey=False, squeeze=False)
-    for ax, geo in zip(axs[0], geos):
-        for lat in LATS:
-            if lat == "scl" and R == 0.5:
-                continue
-            c = load(lat, geo, R)
-            for side, ls, fill in ((1, "-", "full"), (-1, "--", "none")):
-                m = (np.sign(c["theta"]) == side) & (np.abs(c["theta"]) <= PI4)
-                qh, A = by_qh(c, "A_conf", m)
-                ax.plot(qh, [a.min() for a in A], ls, color=COLOR[lat], marker=MARK[lat], ms=5, fillstyle=fill, lw=1.3,
-                        label=f"{NAME[lat]} {'counterclockwise' if side > 0 else 'clockwise'}")
-        ax.set_yscale("symlog", linthresh=1e-8)
-        ax.axhline(0, color=MUTED, lw=0.6)
-        ax.set_xlabel(r"$Q/h$"); ax.set_ylabel(r"min$_\theta\,A_\perp/h$")
-        ax.set_title(GEO[geo], color=INK, fontsize=10)
-    axs[0][0].legend(frameon=False, fontsize=7, ncol=1)
-    fig.suptitle(title, color=MUTED, fontsize=8, y=-0.04)
-    fig.savefig(os.path.join(OUT, fname))
-    plt.close(fig)
-
-
-# ---------------------------------------------------------------- |A_perp| averaged over theta (Fig. S3)
-def amplitude_figure(R, fname, geos=("monolayer", "bulk3d", "pure2d")):
-    fig, axs = plt.subplots(1, len(geos), figsize=(4.4 * len(geos), 3.6), sharey=True)
-    for ax, geo in zip(axs, geos):
-        for lat in LATS:
-            c = load(lat, geo, R)
-            m = np.abs(c["theta"]) <= PI4
-            qh, A = by_qh(c, "A_conf", m)
-            y = np.array([np.abs(a).mean() for a in A])
-            ax.semilogy(qh, np.maximum(y, 1e-22), color=COLOR[lat], marker=MARK[lat], ms=5, mfc="none", lw=1.3,
-                        label=NAME[lat])
-        ax.set_title(GEO[geo], color=INK, fontsize=10)
-        ax.set_xlabel(r"$Q/h$")
-    axs[0].set_ylabel(r"$\overline{|A_\perp|}/h$  (average over $|\theta|\leq\pi/4$)")
-    axs[0].legend(frameon=False, fontsize=8)
-    fig.suptitle(f"$R = {R:g}\\,Q$. For SCL with $R = Q/2$ the values are at round-off level "
-                 "(exact cancellation, SI Section S3).", color=MUTED, fontsize=8, y=-0.04)
-    fig.savefig(os.path.join(OUT, fname))
-    plt.close(fig)
-
-
-# ---------------------------------------------------------------- converged U_par, U_perp (commented SI figures)
-def converged_velocity_figure(fname):
-    fig, axs = plt.subplots(1, 2, figsize=(10, 3.6))
-    for lat in ("scl", "hex"):
-        c = load(lat, "bulk3d", 0.5)
-        circ = full_circle(c)
-        for key, ls in (("U_perp", "-"), ("U_par", "--")):
-            qh, U = by_qh(c, key, circ)
-            sub = r"\perp" if key == "U_perp" else r"\parallel"
-            lab = NAME[lat] + " $U_{" + sub + "}$"
-            axs[0].plot(qh, [u.mean() for u in U], ls, color=COLOR[lat], marker=MARK[lat], ms=5, mfc="none", label=lab)
-            m = circ & np.isclose(c["Q_over_h"], 0.25)
-            o = np.argsort(c["theta"][m])
-            axs[1].plot(c["theta"][m][o], c[key][m][o], ls, color=COLOR[lat], lw=1.5, label=lab)
-    axs[0].set_xlabel(r"$Q/h$"); axs[0].set_ylabel(r"$\theta$-average  [$\zeta V^S/(\mu Q)$]")
-    axs[1].set_xlabel(r"$\theta$ (rad)"); axs[1].set_ylabel(r"value at $Q/h = 0.25$")
-    axs[0].legend(frameon=False, fontsize=8, ncol=2)
-    fig.suptitle("Converged translational velocity of the pair, 3D, $R = Q/2$", color=MUTED, fontsize=8, y=-0.04)
-    fig.savefig(os.path.join(OUT, fname))
-    plt.close(fig)
+def main():
+    print("main text (R = Q/2):")
+    for geo in ("bulk3d", "monolayer"):
+        velocity_figures(geo, 0.5, LATS, "figs", "")
+        for lat in ("bcl", "fcl", "hex"):
+            stability_map(lat, geo, 0.5, "figs", "")
+    minima_figure(0.5, "figs", "", (6.2, 3.6))
+    print("SI (R = Q/4 unless stated):")
+    velocity_figures("bulk3d", 0.25, ["bcl", "hex"], "figs_2", "_R_p25")
+    velocity_figures("monolayer", 0.25, ["hex"], "figs_2", "_R_p25")
+    for geo in ("monolayer", "bulk3d"):
+        magnitude_figure(geo)
+    for lat in ("hex", "bcl"):
+        stability_map(lat, "bulk3d", 0.25, "figs_2", "_R_p25")
+    stability_map("hex", "monolayer", 0.25, "figs_2", "_R_p25")
+    minima_figure(0.25, "figs_2", "_R_p25", (3.6, 3.0))
 
 
 if __name__ == "__main__":
-    import time
-    os.makedirs(OUT, exist_ok=True)
-    jobs = [
-        (velocity_figure, ("bulk3d", 0.5, "fig2_velocity_3D.png", "Fig. 2 (corrected): pair velocity, 3D lattices, $R = Q/2$")),
-        (velocity_figure, ("monolayer", 0.5, "fig3_velocity_monolayer.png", "Fig. 3 (corrected): pair velocity, monolayers in a 3D fluid, $R = Q/2$")),
-        (stability_figure, ("bulk3d", 0.5, ["bcl", "fcl", "hex"], "fig4_stability_3D.png", "Fig. 4 (corrected): 3D, $R = Q/2$ (SCL: $A_\\perp = 0$ identically)")),
-        (stability_figure, ("monolayer", 0.5, ["bcl", "fcl", "hex"], "fig5_stability_monolayer.png", "Fig. 5 (corrected): monolayers in a 3D fluid, $R = Q/2$ (SCL: $A_\\perp = 0$ identically)")),
-        (minima_figure, (0.5, "fig7_minima.png", "Fig. 7 (corrected): $R = Q/2$. Filled: $\\theta > 0$, open: $\\theta < 0$")),
-        (velocity_figure, ("bulk3d", 0.25, "figS1_velocity_3D_R025.png", "Fig. S1 (corrected): 3D, $R = Q/4$")),
-        (velocity_figure, ("monolayer", 0.25, "figS2_velocity_monolayer_R025.png", "Fig. S2 (corrected): monolayers, $R = Q/4$")),
-        (amplitude_figure, (0.5, "figS3_mean_abs_A.png")),
-        (stability_figure, ("bulk3d", 0.25, LATS, "figS4_stability_3D_R025.png", "Fig. S4 (corrected): 3D, $R = Q/4$")),
-        (stability_figure, ("monolayer", 0.25, LATS, "figS5_stability_monolayer_R025.png", "Fig. S5 (corrected): monolayers in a 3D fluid, $R = Q/4$")),
-        (minima_figure, (0.25, "figS6_minima_R025.png", "Fig. S6 (corrected): $R = Q/4$. Filled: $\\theta > 0$, open: $\\theta < 0$")),
-        (velocity_figure, ("pure2d", 0.5, "figS7_velocity_pure2d.png", "Extra SI: pair velocity, pure 2D, $R = Q/2$")),
-        (stability_figure, ("pure2d", 0.5, ["bcl", "fcl", "hex"], "figS8_stability_pure2d.png", "Extra SI: pure 2D (line forces), $R = Q/2$")),
-        (stability_figure, ("pure2d", 0.25, LATS, "figS9_stability_pure2d_R025.png", "Extra SI: pure 2D, $R = Q/4$")),
-        (minima_figure, (0.5, "figS10_minima_pure2d.png", "Extra SI: pure 2D, $R = Q/2$"), {"geos": ("pure2d",)}),
-        (converged_velocity_figure, ("figS11_converged_velocity_3D.png",)),
-    ]
-    t0 = time.time()
-    for i, (fn, args, *kw) in enumerate(jobs, 1):
-        name = next(a for a in args if isinstance(a, str) and a.endswith(".png"))
-        print(f"[{i:2d}/{len(jobs)}] {name} ...", end=" ", flush=True)
-        t = time.time()
-        fn(*args, **(kw[0] if kw else {}))
-        print(f"ok ({time.time() - t:.1f} s)", flush=True)
-    print(f"{len(jobs)} figures written to {OUT} in {time.time() - t0:.1f} s", flush=True)
+    main()

@@ -1,45 +1,48 @@
-"""Direct real-space lattice sums for 2D lattices (monolayer in 3D fluid, or pure 2D).
+"""Direct real-space lattice sums with extrapolation of the cutoff radius.
 
-All quantities used here are built from force-free combinations whose lattice sums converge
-absolutely once shells are summed symmetrically (cutoff by radius on a centrosymmetric lattice).
-The cutoff is extrapolated to infinity with a least-squares fit a + b/L + c/L^2.
+Used for the monolayer (a two-dimensional lattice of pairs in an unbounded 3D fluid) and for the
+image sums of the pressure gradient. Every quantity is built from force-free combinations whose
+lattice sums converge absolutely once shells are summed symmetrically (cutoff by radius on a
+centrosymmetric lattice). The cutoff is extrapolated to infinity with a fit a + b/L + c/L^2.
 """
 import numpy as np
 
-from .kernels import KERNELS
+from .kernels import stokeslet_dot, pressure_gradient_dot
 from .lattices import points
 
 
-class Direct2DLattice:
-    def __init__(self, A, kernel="3d", L_over_h=(40, 60, 90, 120, 160)):
+class LatticeSum:
+    """Partial sums over the lattice points r_n (sorted by radius) for several cutoff radii L.
+
+    dims = 2: monolayer {c1 a1 + c2 a2}.  dims = 3: bulk lattice.
+    include_origin = False drops r_n = 0 (sum over the images of the central pair only)."""
+
+    def __init__(self, A, dims=2, L_over_h=(40, 60, 90, 120, 160), include_origin=True):
         self.A = np.asarray(A, float)
-        self.kernel = KERNELS[kernel]
         h = np.cbrt(abs(np.linalg.det(self.A)))  # lattice length scale
         self.L = np.array(L_over_h, float) * h
-        # pure 2D: line forces along z through the {a1, a2} net -> distances measured in the xy plane
-        metric = (lambda r: r * np.array([1.0, 1.0, 0.0])) if kernel == "2d" else None
-        self.rn = points(self.A, self.L.max(), dims=2, metric=metric)
-        self.rad = np.linalg.norm(self.rn if metric is None else metric(self.rn), axis=1)
-        self.cuts = np.searchsorted(self.rad, self.L * (1 + 1e-12), side="right")
+        rn = points(self.A, self.L.max(), dims=dims)
+        self.rn = rn if include_origin else rn[1:]
+        rad = np.linalg.norm(self.rn, axis=1)
+        self.cuts = np.searchsorted(rad, self.L * (1 + 1e-12), side="right")
 
-    def velocity_vs_L(self, X, P, F):
-        """(nL, E, 3) partial sums for each cutoff L (own cell always included)."""
+    def _vs_L(self, kernel, X, P, F):
         X, P, F = (np.atleast_2d(np.asarray(a, float)) for a in (X, P, F))
-        E = X.shape[0]
-        out = np.zeros((len(self.L), E, 3))
-        for e in range(E):
+        out = np.zeros((len(self.L), X.shape[0], 3))
+        for e in range(X.shape[0]):
             contrib = np.zeros((len(self.rn), 3))
             for s in range(P.shape[0]):
-                D = X[e] - P[s] - self.rn
-                contrib += self.kernel(D, F[s])
-            cs = np.cumsum(contrib, axis=0)
-            out[:, e, :] = cs[self.cuts - 1]
+                contrib += kernel(X[e] - P[s] - self.rn, F[s])
+            out[:, e, :] = np.cumsum(contrib, axis=0)[self.cuts - 1]
         return out
 
-    def velocity(self, X, P, F):
-        """Extrapolated velocity (E,3) and an error estimate (E,3)."""
-        vs = self.velocity_vs_L(X, P, F)
-        return extrapolate(self.L, vs)
+    def velocity_vs_L(self, X, P, F):
+        """(nL, E, 3) partial sums of the velocity at X for each cutoff L."""
+        return self._vs_L(stokeslet_dot, X, P, F)
+
+    def grad_p_vs_L(self, X, P, F):
+        """(nL, E, 3) partial sums of the pressure gradient at X for each cutoff L."""
+        return self._vs_L(pressure_gradient_dot, X, P, F)
 
 
 def extrapolate(L, vals):

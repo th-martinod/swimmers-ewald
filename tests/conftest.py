@@ -1,4 +1,3 @@
-import numpy as np
 import pytest
 
 from spinners.backends import make_field
@@ -8,7 +7,7 @@ SMALL_L = (30, 45, 60, 90)
 
 @pytest.fixture(scope="session")
 def fields():
-    """Cached field back-ends: fields[(geometry, lattice, h)] -> (field, kernel)."""
+    """Cached fields: fields(geometry, lattice, h). Smaller cutoff radii than production, for speed."""
     cache = {}
 
     def get(geometry, lattice, h):

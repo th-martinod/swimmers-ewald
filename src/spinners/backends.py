@@ -1,26 +1,54 @@
-"""Field back-ends for the three geometries."""
+"""Periodic flow of the pairs for the two geometries of the article.
+
+bulk3d     3D lattice of pairs in a 3D fluid. Ewald sums (velocities relative to the mean fluid velocity).
+monolayer  2D lattice {c1 a1 + c2 a2} of pairs in an unbounded 3D fluid. Direct sums (fluid at rest far away).
+
+Both expose grad_p_vs_L(P, F): the pressure gradient at the pair centre produced by the image pairs
+(absolutely convergent, ~ d^-5), needed for the average over the reference sub-volume. For bulk3d the
+partial sums at the cutoffs GRADP_L_3D (in units of h) are used directly, the last one as the value.
+"""
 import numpy as np
 
+from .direct import LatticeSum
 from .ewald import Ewald3D
-from .direct import Direct2DLattice
-from .lattices import basis
+from .lattices import basis, points
 
-GEOMETRIES = ("bulk3d", "monolayer", "pure2d")
+GEOMETRIES = ("bulk3d", "monolayer")
+GRADP_L_3D = (16, 24)
 
 
-def make_field(geometry, lattice, h, xi=None, L_over_h=(40, 60, 90, 120, 160)):
-    A = basis(lattice, h)
-    if geometry == "bulk3d":
-        ew = Ewald3D(A, xi=xi)
-        return (lambda X, P, F: (ew.velocity(X, P, F), np.zeros((len(X), 3)))), "3d"
-    if geometry in ("monolayer", "pure2d"):
-        kern = "3d" if geometry == "monolayer" else "2d"
-        d = Direct2DLattice(A, kernel=kern, L_over_h=L_over_h)
+class Field:
+    def __init__(self, geometry, lattice, h, xi=None, L_over_h=(40, 60, 90, 120, 160), gradp_L_3d=GRADP_L_3D):
+        A = basis(lattice, h)
+        self.geometry, self.lattice, self.h, self.A = geometry, lattice, float(h), A
+        if geometry == "bulk3d":
+            self.direct = False
+            self.ewald = Ewald3D(A, xi=xi)
+            self.images = LatticeSum(A, dims=3, L_over_h=gradp_L_3d, include_origin=False)
+            self.d_nn = np.linalg.norm(points(A, 2 * np.linalg.norm(A, axis=1).max(), dims=3)[1])
+        elif geometry == "monolayer":
+            self.direct = True
+            self.sums = LatticeSum(A, dims=2, L_over_h=L_over_h)
+            self.images = LatticeSum(A, dims=2, L_over_h=L_over_h, include_origin=False)
+            self.d_nn = np.linalg.norm(points(A, 2 * np.linalg.norm(A[:2], axis=1).max(), dims=2)[1])
+        else:
+            raise ValueError(f"geometry '{geometry}' not implemented")
+        self.L = self.images.L
 
-        def field(X, P, F):
-            return d.velocity(X, P, F)
+    def velocity(self, X, P, F):
+        """Velocity (E,3) at X. For the monolayer, the extrapolated direct sum."""
+        if self.direct:
+            from .direct import extrapolate
+            return extrapolate(self.sums.L, self.sums.velocity_vs_L(X, P, F))[0]
+        return self.ewald.velocity(X, P, F)
 
-        field.vs_L = d.velocity_vs_L  # lets pair.observables extrapolate each observable directly
-        field.L = d.L
-        return field, kern
-    raise ValueError(geometry)
+    def velocity_vs_L(self, X, P, F):
+        return self.sums.velocity_vs_L(X, P, F)
+
+    def grad_p_vs_L(self, P, F):
+        """(nL, 3) image sums of the pressure gradient at the pair centre for each cutoff radius."""
+        return self.images.grad_p_vs_L(np.zeros((1, 3)), P, F)[:, 0, :]
+
+
+def make_field(geometry, lattice, h, **kw):
+    return Field(geometry, lattice, h, **kw)

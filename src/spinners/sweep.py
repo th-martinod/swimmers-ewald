@@ -1,4 +1,4 @@
-"""Parameter sweeps: python -m spinners.sweep configs/hex.toml"""
+"""Parameter sweeps: spinners-sweep configs/paper.toml [--out DIR] [--workers N]"""
 import argparse
 import csv
 import os
@@ -14,8 +14,7 @@ import numpy as np
 from .backends import make_field
 from .pair import observables
 
-FIELDS = ["geometry", "lattice", "R", "h", "Q_over_h", "theta", "rate_conf", "omega_qdot", "A_conf",
-          "A_qdot", "Vconf_par", "U_perp", "U_par", "U_perp_isolated", "err_conf", "err_qdot", "err_U"]
+FIELDS = ["geometry", "lattice", "R", "h", "Q_over_h", "theta", "T", "A_perp", "B_perp", "err_A", "err_B"]
 
 
 def theta_grid(n, tmax):
@@ -35,12 +34,12 @@ def theta_union(ranges):
 def run_one(task):
     geometry, lattice, R, h, thetas, L_over_h = task
     t0 = time.time()
-    field, kern = make_field(geometry, lattice, h, L_over_h=L_over_h)
+    field = make_field(geometry, lattice, h, L_over_h=L_over_h)
     rows = []
     for th in thetas:
-        o = observables(field, float(th), 1.0, R, kern)
+        o = observables(field, float(th), 1.0, R)
         rows.append({"geometry": geometry, "lattice": lattice, "R": R, "h": h, "Q_over_h": 1.0 / h,
-                     "theta": float(th), **o})
+                     "theta": float(th), **{k: o[k] for k in FIELDS[6:]}})
     return rows, time.time() - t0
 
 
